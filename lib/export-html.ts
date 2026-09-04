@@ -1,15 +1,19 @@
 import type { ResumeData } from "@/types/resume"
+import { sanitizeSvgBody, sanitizeUrl } from "@/lib/html-safety"
 import {
   escapeHtml,
   formatPersonalInfoDisplay,
   renderModuleContent,
 } from "@/lib/resume-content"
 
-export function buildResumeHtml(resumeData: ResumeData): string {
+export function buildResumeHtml(resumeData: ResumeData, { embedded = false }: { embedded?: boolean } = {}): string {
+  const safeAvatar = sanitizeUrl(resumeData.avatar || "", { allowImages: true })
+
   const personalInfoHtml = resumeData.personalInfo
     .map((item) => {
-      const iconHtml = item.icon
-        ? `<svg class="resume-icon" width="16" height="16" viewBox="0 0 24 24" fill="black">${item.icon}</svg>`
+      const iconBody = sanitizeSvgBody(item.icon)
+      const iconHtml = iconBody
+        ? `<svg class="resume-icon" width="16" height="16" viewBox="0 0 24 24" fill="black">${iconBody}</svg>`
         : ""
 
       return `
@@ -27,8 +31,9 @@ export function buildResumeHtml(resumeData: ResumeData): string {
   const modulesHtml = [...resumeData.modules]
     .sort((a, b) => a.order - b.order)
     .map((module) => {
-      const iconHtml = module.icon
-        ? `<svg width="20" height="20" viewBox="0 0 24 24" fill="black">${module.icon}</svg>`
+      const iconBody = sanitizeSvgBody(module.icon)
+      const iconHtml = iconBody
+        ? `<svg width="20" height="20" viewBox="0 0 24 24" fill="black">${iconBody}</svg>`
         : ""
 
       return `
@@ -279,6 +284,21 @@ export function buildResumeHtml(resumeData: ResumeData): string {
             max-width: 100%;
           }
 
+          @media screen {
+            * { scrollbar-width: thin; scrollbar-color: #9bc8b7 transparent; }
+            @supports selector(::-webkit-scrollbar) {
+              * { scrollbar-width: auto; scrollbar-color: auto; }
+              ::-webkit-scrollbar { width: 8px; height: 8px; }
+              ::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: transparent; }
+              ::-webkit-scrollbar-thumb { background: #9bc8b7; border: 2px solid transparent; background-clip: padding-box; border-radius: 999px; }
+              ::-webkit-scrollbar-thumb:hover { background-color: #599e82; }
+            }
+            ${embedded ? `
+            html, body { background: #fff; padding: 0; }
+            .page { width: 100%; min-width: 210mm; margin: 0; box-shadow: none; }
+            ` : ""}
+          }
+
           @media print {
             html,
             body {
@@ -307,7 +327,7 @@ export function buildResumeHtml(resumeData: ResumeData): string {
                 ${personalInfoHtml}
               </div>
             </div>
-            ${resumeData.avatar ? `<img src="${resumeData.avatar}" alt="头像" class="avatar" />` : ""}
+            ${safeAvatar ? `<img src="${escapeHtml(safeAvatar)}" alt="头像" class="avatar" />` : ""}
           </header>
           ${modulesHtml}
           ${

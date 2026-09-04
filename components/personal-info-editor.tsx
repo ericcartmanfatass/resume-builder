@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Icon } from "@iconify/react";
 import type { PersonalInfoItem } from "@/types/resume";
+import { sanitizeSvgBody, sanitizeUrl } from "@/lib/html-safety";
 import { createNewPersonalInfoItem } from "@/lib/resume-utils";
 import IconPicker from "./icon-picker";
 
@@ -31,11 +32,11 @@ export default function PersonalInfoEditor({
   onUpdate,
 }: PersonalInfoEditorProps) {
   const [avatarUrl, setAvatarUrl] = useState(avatar || "");
+  const safeAvatarUrl = sanitizeUrl(avatarUrl, { allowImages: true });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (!avatar) return;
-    setAvatarUrl(avatar);
+    setAvatarUrl(avatar || "");
   }, [avatar]);
 
   /**
@@ -118,9 +119,9 @@ export default function PersonalInfoEditor({
               className="w-16 h-16 rounded-full border-2 border-dashed border-border flex items-center justify-center overflow-hidden hover:cursor-pointer hover:border-primary"
               onClick={() => fileInputRef.current?.click()}
             >
-              {avatarUrl ? (
+              {safeAvatarUrl ? (
                 <img
-                  src={avatarUrl}
+                  src={safeAvatarUrl}
                   alt="头像预览"
                   className="w-full h-full object-cover"
                 />
@@ -192,6 +193,8 @@ function PersonalInfoItemEditor({
   onUpdate,
   onRemove,
 }: PersonalInfoItemEditorProps) {
+  const iconBody = sanitizeSvgBody(item.icon);
+
   return (
     <div className="flex items-start gap-3 p-3 border rounded-lg bg-muted/30">
       {/* 图标选择 */}
@@ -202,12 +205,12 @@ function PersonalInfoItemEditor({
             size="sm"
             className="icon-button bg-transparent"
           >
-            {item.icon && (
+            {iconBody && (
               <svg
                 width={24}
                 height={24}
                 viewBox="0 0 24 24"
-                dangerouslySetInnerHTML={{ __html: item.icon }}
+                dangerouslySetInnerHTML={{ __html: iconBody }}
               />
             )}
           </Button>

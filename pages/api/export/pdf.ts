@@ -1,9 +1,16 @@
 import fs from "node:fs"
 import path from "node:path"
-import type { NextApiRequest, NextApiResponse } from "next"
 import chromium from "@sparticuz/chromium"
 import puppeteer from "puppeteer-core"
 import type { Page } from "puppeteer-core"
+import { buildResumeHtml } from "@/lib/export-html"
+import { validateResumeData } from "@/lib/resume-utils"
+import { apiHandler, allowMethods, requireSameOrigin, ApiError } from "@/lib/server/http"
+import { getApiUser } from "@/lib/server/auth"
+import { guestId, requestFingerprint, requestIpHash } from "@/lib/server/guest"
+import { reserveExport, completeExport, failExport } from "@/lib/server/export-quota"
+import { resumeSchema } from "@/lib/server/resume-schema"
+import { readShare } from "@/lib/server/resumes"
 
 export const config = {
   api: {
@@ -103,19 +110,29 @@ async function waitForPageAssets(page: Page) {
   })
 }
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" })
-  }
+export default apiHandler(async (req, res) => {
+  allowMethods(req, res, ["POST"])
+  requireSameOrigin(req)
+  const user = await getApiUser(req, res)
+  const actor = user ? { userId: user.id } : { guestId: guestId(req, res), fingerprintHash: requestFingerprint(req), ipHash: requestIpHash(req) }
+  const shared = typeof req.body?.shareToken === "string" ? await readShare(req.body.shareToken) : undefined
+  if (shared === null) throw new ApiError(404, "SHARE_NOT_FOUND", "分享不存在或已关闭。")
+  const resumeData = resumeSchema.parse(shared ?? req.body?.resumeData)
 
-  const html = req.body?.html
-  if (!html || typeof html !== "string") {
-    return res.status(400).json({ error: "Missing HTML content" })
+  const validation = validateResumeData(resumeData)
+  if (!validation.isValid) {
+    return res.status(400).json({
+      error: "Invalid resume data",
+      details: validation.errors.join("; "),
+    })
   }
 
   let browser: Awaited<ReturnType<typeof puppeteer.launch>> | null = null
+  const reservation = await reserveExport(actor)
 
   try {
+    const html = buildResumeHtml(resumeData)
+
     if (process.env.VERCEL === "1") {
       browser = await puppeteer.launch({
         args: [...chromium.args, "--disable-gpu"],
@@ -126,10 +143,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     } else {
       const executablePath = findLocalChromePath()
       if (!executablePath) {
-        return res.status(500).json({
-          error: "PDF generation failed",
-          details: "Local Chrome not found. Install Chrome or verify this API on Vercel.",
-        })
+        throw new ApiError(503, "PDF_UNAVAILABLE", "PDF 服务暂不可用。此次未扣除额度。")
       }
 
       browser = await puppeteer.launch({
@@ -140,11 +154,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const page = await browser.newPage()
+    await page.setJavaScriptEnabled(false)
+    // Resume HTML is untrusted. Do not allow Chromium to reach internal services or the metadata endpoint.
+    await page.setRequestInterception(true)
+    page.on("request", (request) => {
+      if (/^(data:|blob:|about:)/i.test(request.url())) void request.continue().catch(() => {})
+      else void request.abort().catch(() => {})
+    })
     await page.setViewport({ width: 1440, height: 2048, deviceScaleFactor: 1 })
     await page.setContent(injectEmbeddedFont(html), { waitUntil: "domcontentloaded", timeout: 45000 })
     await waitForPageAssets(page)
 
     const pdf = await page.pdf({
+      timeout: 60000,
       format: "A4",
       printBackground: true,
       preferCSSPageSize: true,
@@ -156,18 +178,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
     })
 
+    await completeExport(reservation)
     res.setHeader("Content-Type", "application/pdf")
     res.setHeader("Content-Disposition", "attachment; filename=resume.pdf")
     res.setHeader("Cache-Control", "no-store")
     return res.status(200).send(Buffer.from(pdf))
   } catch (error) {
-    return res.status(500).json({
-      error: "PDF generation failed",
-      details: error instanceof Error ? error.message : "Unknown error",
-    })
+    await failExport(reservation).catch(() => {})
+    if (error instanceof ApiError) throw error
+    throw new ApiError(503, "EXPORT_FAILED", "PDF 生成失败，请稍后重试。此次未扣除额度。")
   } finally {
     if (browser) {
-      await browser.close()
+      await browser.close().catch(() => {})
     }
   }
-}
+})

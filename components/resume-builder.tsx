@@ -13,10 +13,18 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/hooks/use-toast"
-import { downloadFile, exportToMagicyanFile, importFromMagicyanFile } from "@/lib/resume-utils"
+import { createBlankResumeData, downloadFile, exportToMagicyanFile, importFromMagicyanFile } from "@/lib/resume-utils"
 import type { EditorState, ResumeData } from "@/types/resume"
+import type { AccountUser } from "@/types/account"
+import { AccountMenu } from "@/components/account-menu"
+import { useAccount } from "@/components/account-provider"
+import { CloudResumeControls } from "@/components/cloud-resume-controls"
+import { useCloudResume } from "@/hooks/use-cloud-resume"
 
 type ViewMode = "both" | "edit-only" | "preview-only"
+type SaveStatus = "idle" | "saving" | "saved" | "error"
+
+const LOCAL_RESUME_KEY = "magicyan-resume-draft"
 
 const ViewModeSelector = memo(function ViewModeSelector({
   viewMode,
@@ -32,12 +40,12 @@ const ViewModeSelector = memo(function ViewModeSelector({
   ]
 
   return (
-    <div className="relative inline-flex rounded-lg bg-muted p-1">
+    <div className="relative inline-flex max-w-full overflow-x-auto rounded-lg bg-muted p-1">
       {modes.map((mode) => (
         <button
           key={mode.key}
           onClick={() => onViewModeChange(mode.key)}
-          className={`relative flex min-w-[100px] items-center justify-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 ${
+          className={`relative flex min-w-[84px] items-center justify-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 sm:min-w-[100px] ${
             viewMode === mode.key ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
           }`}
         >
@@ -49,7 +57,9 @@ const ViewModeSelector = memo(function ViewModeSelector({
   )
 })
 
-export default function ResumeBuilder() {
+export default function ResumeBuilder({ user }: { user: AccountUser | null }) {
+  const localKey = user ? `${LOCAL_RESUME_KEY}:${user.id}` : LOCAL_RESUME_KEY
+  const { confirm } = useAccount()
   const [editorState, setEditorState] = useState<EditorState>({
     resumeData: {
       title: "加载中...",
@@ -63,35 +73,130 @@ export default function ResumeBuilder() {
     showPreview: true,
   })
   const [viewMode, setViewMode] = useState<ViewMode>("both")
+  const [isHydrated, setIsHydrated] = useState(false)
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle")
+  const [hasGuestDraft, setHasGuestDraft] = useState(false)
   const { toast } = useToast()
+  const loadCloudData = useCallback((resumeData: ResumeData) => {
+    setEditorState((previous) => ({ ...previous, resumeData }))
+  }, [])
+  const cloud = useCloudResume(user, editorState.resumeData, isHydrated, localKey, loadCloudData)
+
+  const loadDemoData = useCallback(async () => {
+    const response = await fetch("/demo.magicyan")
+    if (!response.ok) {
+      throw new Error("Failed to load demo data")
+    }
+
+    const content = await response.text()
+    return importFromMagicyanFile(content)
+  }, [])
 
   useEffect(() => {
-    const loadDemoData = async () => {
+    const loadInitialData = async () => {
       try {
-        const response = await fetch("/demo.magicyan")
-        if (!response.ok) {
-          throw new Error("Failed to load demo data")
+        if (user) setHasGuestDraft(Boolean(localStorage.getItem(LOCAL_RESUME_KEY)) && !localStorage.getItem(`${localKey}:guest-dismissed`))
+        const savedDraft = window.localStorage.getItem(localKey)
+        if (savedDraft) {
+          setEditorState((prev) => ({
+            ...prev,
+            resumeData: importFromMagicyanFile(savedDraft),
+          }))
+          setIsHydrated(true)
+          return
         }
 
-        const content = await response.text()
-        const demoData = importFromMagicyanFile(content)
+        const demoData = await loadDemoData()
 
         setEditorState((prev) => ({
           ...prev,
           resumeData: demoData,
         }))
+        setIsHydrated(true)
       } catch (error) {
         console.error("加载示例数据失败:", error)
+        setIsHydrated(true)
         toast({
           title: "加载失败",
-          description: "无法加载示例简历数据，请刷新页面重试。",
+          description: "无法加载本地草稿或示例简历数据，请刷新页面重试。",
           variant: "destructive",
         })
       }
     }
 
-    loadDemoData()
-  }, [toast])
+    loadInitialData()
+  }, [loadDemoData, toast, localKey, user?.id])
+
+  useEffect(() => {
+    if (!isHydrated || cloud.restoring) {
+      return
+    }
+
+    setSaveStatus("saving")
+    const timer = window.setTimeout(() => {
+      try {
+        cloud.writeLocalDraft(editorState.resumeData)
+        setSaveStatus("saved")
+      } catch (error) {
+        console.error("自动保存失败:", error)
+        setSaveStatus("error")
+      }
+    }, 500)
+
+    return () => window.clearTimeout(timer)
+  }, [editorState.resumeData, isHydrated, cloud.restoring, cloud.writeLocalDraft])
+
+  useEffect(() => {
+    const flush = () => {
+      if (!isHydrated || cloud.restoring) return
+      try { cloud.writeLocalDraft(editorState.resumeData) }
+      catch { setSaveStatus("error") }
+    }
+    window.addEventListener("resume:flush-draft", flush)
+    window.addEventListener("pagehide", flush)
+    return () => {
+      window.removeEventListener("resume:flush-draft", flush)
+      window.removeEventListener("pagehide", flush)
+    }
+  }, [editorState.resumeData, isHydrated, cloud.restoring, cloud.writeLocalDraft])
+
+  const handleLoadDemo = async () => {
+    try {
+      const demoData = await loadDemoData()
+      await cloud.detach()
+      window.localStorage.removeItem(localKey)
+      setEditorState((prev) => ({
+        ...prev,
+        resumeData: demoData,
+      }))
+      toast({
+        title: "示例已加载",
+        description: "当前草稿已替换为示例简历。",
+      })
+    } catch (error) {
+      console.error("加载示例数据失败:", error)
+      toast({
+        title: "加载失败",
+        description: "无法加载示例简历数据，请稍后重试。",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleCreateBlankResume = async () => {
+    try { await cloud.detach() }
+    catch (cause) { toast({ title: "请先处理云端保存", description: cause instanceof Error ? cause.message : "保存失败。", variant: "destructive" }); return }
+    const blankResume = createBlankResumeData()
+    window.localStorage.removeItem(localKey)
+    setEditorState((prev) => ({
+      ...prev,
+      resumeData: blankResume,
+    }))
+    toast({
+      title: "已新建简历",
+      description: "当前草稿已重置为空白简历。",
+    })
+  }
 
   const updateResumeData = useCallback((updates: Partial<ResumeData>) => {
     setEditorState((prev) => ({
@@ -151,10 +256,11 @@ export default function ResumeBuilder() {
     }
 
     const reader = new FileReader()
-    reader.onload = (loadEvent) => {
+    reader.onload = async (loadEvent) => {
       try {
         const content = loadEvent.target?.result as string
         const importedData = importFromMagicyanFile(content)
+        await cloud.detach()
 
         setEditorState((prev) => ({
           ...prev,
@@ -187,28 +293,59 @@ export default function ResumeBuilder() {
     event.target.value = ""
   }
 
+  const saveStatusLabel =
+    saveStatus === "saving" ? "本地保存中" : saveStatus === "saved" ? "本地草稿已保存" : saveStatus === "error" ? "本地保存失败" : ""
+
   return (
     <div className="resume-editor">
-      <div className="editor-toolbar">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
+      <header className="editor-toolbar">
+        <div className="toolbar-title">
+          <div className="flex min-w-0 items-center gap-2">
             <Icon icon="mdi:file-document-edit" className="h-6 w-6 text-primary" />
-            <h1 className="text-lg font-semibold">简历生成器</h1>
+            <h1 className="sr-only whitespace-nowrap text-lg font-semibold md:not-sr-only">简历生成器</h1>
           </div>
-          <Badge variant="secondary" className="text-xs">
+          <Badge variant="secondary" className="hidden max-w-32 truncate text-xs xl:inline-flex">
             {editorState.resumeData.title}
           </Badge>
+          {saveStatusLabel && (
+            <span className={`hidden whitespace-nowrap text-xs 2xl:inline ${saveStatus === "error" ? "text-destructive" : "text-muted-foreground"}`}>
+              {saveStatusLabel}
+            </span>
+          )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="toolbar-actions">
           <ViewModeSelector viewMode={viewMode} onViewModeChange={setViewMode} />
-          <Separator orientation="vertical" className="h-6" />
+          <Separator orientation="vertical" className="hidden h-6 lg:block" />
 
           <input type="file" accept=".magicyan" onChange={handleImport} className="hidden" id="import-file" />
           <Button
             variant="outline"
             size="sm"
+            onClick={handleCreateBlankResume}
+            disabled={cloud.busy || !isHydrated}
+            className="gap-2 bg-transparent"
+          >
+            <Icon icon="mdi:file-plus-outline" className="h-4 w-4" />
+            新建
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleLoadDemo}
+            disabled={cloud.busy || !isHydrated}
+            className="gap-2 bg-transparent"
+          >
+            <Icon icon="mdi:file-restore-outline" className="h-4 w-4" />
+            示例
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => document.getElementById("import-file")?.click()}
+            disabled={cloud.busy || !isHydrated}
             className="gap-2 bg-transparent"
           >
             <Icon icon="mdi:import" className="h-4 w-4" />
@@ -222,7 +359,29 @@ export default function ResumeBuilder() {
 
           <PDFExportButton resumeData={editorState.resumeData} size="sm" />
         </div>
-      </div>
+        <AccountMenu>
+          <CloudResumeControls cloud={cloud} ready={isHydrated} />
+          {hasGuestDraft && user && <section className="space-y-3 rounded-lg border bg-muted/40 p-4 text-sm">
+            <p>此浏览器有一份游客草稿，是否导入当前账号？</p>
+            <div className="flex flex-wrap gap-2">
+              <button type="button" className="rounded px-1 py-1.5 text-primary transition-colors hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50" disabled={cloud.busy} onClick={async () => {
+                if (!(await confirm("导入游客草稿将替换当前编辑内容。已关联的云端简历会先保存。是否继续？"))) return
+                try {
+                  const raw = localStorage.getItem(LOCAL_RESUME_KEY)
+                  if (!raw) return
+                  const imported = importFromMagicyanFile(raw)
+                  await cloud.detach()
+                  loadCloudData(imported)
+                  localStorage.setItem(`${localKey}:guest-dismissed`, "1")
+                  setHasGuestDraft(false)
+                  toast({ title: "游客草稿已导入", description: "点击“保存到云端”即可关联到当前账号。" })
+                } catch (cause) { toast({ title: "导入失败", description: cause instanceof Error ? cause.message : "请重试。", variant: "destructive" }) }
+              }}>导入游客草稿</button>
+              <button type="button" className="rounded px-1 py-1.5 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => { localStorage.setItem(`${localKey}:guest-dismissed`, "1"); setHasGuestDraft(false) }}>暂不导入</button>
+            </div>
+          </section>}
+        </AccountMenu>
+      </header>
 
       <div className="editor-content">
         {(viewMode === "both" || viewMode === "edit-only") && (
@@ -256,7 +415,7 @@ export default function ResumeBuilder() {
 
         {(viewMode === "both" || viewMode === "preview-only") && (
           <div className={`preview-panel ${viewMode === "preview-only" ? "w-full" : ""}`}>
-            <HtmlResumePreview resumeData={editorState.resumeData} />
+            <HtmlResumePreview resumeData={editorState.resumeData} embedded />
           </div>
         )}
       </div>

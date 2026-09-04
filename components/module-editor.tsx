@@ -6,6 +6,7 @@ import { DragDropContext, Draggable, Droppable, type DropResult } from "@hello-p
 import { Icon } from "@iconify/react"
 import IconPicker from "@/components/icon-picker"
 import RichTextEditor from "@/components/rich-text-editor"
+import { sanitizeSvgBody } from "@/lib/html-safety"
 import { createNewModule } from "@/lib/resume-utils"
 import type { ModuleContentMode, ResumeModule } from "@/types/resume"
 import { Button } from "@/components/ui/button"
@@ -135,6 +136,7 @@ interface ModuleItemEditorProps {
 
 function ModuleItemEditor({ module, isExpanded, onToggle, onUpdate, onRemove }: ModuleItemEditorProps) {
   const contentMode: ModuleContentMode = module.contentMode === "rich-text" ? "rich-text" : "markdown"
+  const iconBody = sanitizeSvgBody(module.icon)
 
   return (
     <Collapsible open={isExpanded} onOpenChange={onToggle}>
@@ -143,8 +145,8 @@ function ModuleItemEditor({ module, isExpanded, onToggle, onUpdate, onRemove }: 
           <div className="flex cursor-pointer items-center justify-between p-3 transition-colors hover:bg-muted/50">
             <div className="flex items-center gap-3">
               <Icon icon="mdi:drag" className="h-4 w-4 cursor-grab text-muted-foreground active:cursor-grabbing" />
-              {module.icon ? (
-                <svg width={16} height={16} viewBox="0 0 24 24" dangerouslySetInnerHTML={{ __html: module.icon }} />
+              {iconBody ? (
+                <svg width={16} height={16} viewBox="0 0 24 24" dangerouslySetInnerHTML={{ __html: iconBody }} />
               ) : (
                 <div className="h-4 w-4 rounded-sm border border-dashed border-gray-400" />
               )}
@@ -180,8 +182,8 @@ function ModuleItemEditor({ module, isExpanded, onToggle, onUpdate, onRemove }: 
                 <Dialog>
                   <DialogTrigger asChild>
                     <Button variant="outline" className="w-full justify-start gap-2 bg-transparent">
-                      {module.icon ? (
-                        <svg width={16} height={16} viewBox="0 0 24 24" dangerouslySetInnerHTML={{ __html: module.icon }} />
+                      {iconBody ? (
+                        <svg width={16} height={16} viewBox="0 0 24 24" dangerouslySetInnerHTML={{ __html: iconBody }} />
                       ) : (
                         <div className="flex h-4 w-4 items-center justify-center rounded-sm border border-dashed border-gray-400">
                           <span className="text-[8px] text-gray-400">无</span>

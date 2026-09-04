@@ -4,14 +4,27 @@ import type {
   ResumeData,
   ResumeModule,
 } from "@/types/resume"
+import { sanitizeHtml, sanitizeSvgBody, sanitizeUrl } from "@/lib/html-safety"
+
+function normalizePersonalInfoItem(item: PersonalInfoItem): PersonalInfoItem {
+  return {
+    ...item,
+    label: item.label ?? "",
+    value: item.value ?? "",
+    icon: sanitizeSvgBody(item.icon),
+  }
+}
 
 function normalizeModule(module: ResumeModule, order: number): ResumeModule {
+  const contentMode = module.contentMode === "rich-text" ? "rich-text" : "markdown"
+
   return {
     ...module,
     subtitle: module.subtitle ?? "",
     timeRange: module.timeRange ?? "",
-    content: module.content ?? "",
-    contentMode: module.contentMode === "rich-text" ? "rich-text" : "markdown",
+    content: contentMode === "rich-text" ? sanitizeHtml(module.content ?? "") : module.content ?? "",
+    contentMode,
+    icon: sanitizeSvgBody(module.icon),
     order,
   }
 }
@@ -24,7 +37,7 @@ export function createNewModule(order: number): ResumeModule {
     timeRange: "",
     content: "",
     contentMode: "markdown",
-    icon: "mdi:text-box",
+    icon: "",
     order,
   }
 }
@@ -34,7 +47,50 @@ export function createNewPersonalInfoItem(): PersonalInfoItem {
     id: `info-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
     label: "新标签",
     value: "",
-    icon: "mdi:information",
+    icon: "",
+  }
+}
+
+export function createBlankResumeData(): ResumeData {
+  const now = new Date().toISOString()
+
+  return {
+    title: "我的简历",
+    personalInfo: [
+      {
+        id: `info-${Date.now()}-name`,
+        label: "姓名",
+        value: "",
+        icon: "",
+      },
+      {
+        id: `info-${Date.now()}-email`,
+        label: "邮箱",
+        value: "",
+        icon: "",
+      },
+      {
+        id: `info-${Date.now()}-phone`,
+        label: "电话",
+        value: "",
+        icon: "",
+      },
+    ],
+    avatar: "",
+    modules: [
+      {
+        id: `module-${Date.now()}-intro`,
+        title: "自我介绍",
+        subtitle: "",
+        timeRange: "",
+        content: "",
+        contentMode: "markdown",
+        icon: "",
+        order: 0,
+      },
+    ],
+    createdAt: now,
+    updatedAt: now,
   }
 }
 
@@ -43,6 +99,8 @@ export function exportToMagicyanFile(resumeData: ResumeData): string {
     version: "1.1.0",
     data: {
       ...resumeData,
+      avatar: sanitizeUrl(resumeData.avatar || "", { allowImages: true }),
+      personalInfo: resumeData.personalInfo.map(normalizePersonalInfoItem),
       modules: resumeData.modules.map((module, index) => normalizeModule(module, index)),
       updatedAt: new Date().toISOString(),
     },
@@ -103,6 +161,8 @@ export function importFromMagicyanFile(fileContent: string): ResumeData {
     const now = new Date().toISOString()
     return {
       ...data,
+      avatar: sanitizeUrl(data.avatar || "", { allowImages: true }),
+      personalInfo: data.personalInfo.map(normalizePersonalInfoItem),
       modules: data.modules.map((module, index) => normalizeModule(module, index)),
       createdAt: data.createdAt || now,
       updatedAt: now,
@@ -153,6 +213,8 @@ export function validateResumeData(data: ResumeData): { isValid: boolean; errors
 
   if (!Array.isArray(data.modules)) {
     errors.push("简历模块格式错误")
+  } else if (data.modules.length === 0) {
+    errors.push("至少需要添加一个简历模块")
   } else {
     data.modules.forEach((module, index) => {
       if (!module.id || typeof module.title !== "string") {
@@ -165,4 +227,26 @@ export function validateResumeData(data: ResumeData): { isValid: boolean; errors
     isValid: errors.length === 0,
     errors,
   }
+}
+
+export function getResumeSuggestions(data: ResumeData): string[] {
+  const suggestions: string[] = []
+
+  data.personalInfo.forEach((item) => {
+    if (item.label?.trim() && !item.value?.trim()) {
+      suggestions.push(`个人信息「${item.label}」尚未填写`)
+    }
+  })
+
+  data.modules.forEach((module, index) => {
+    if (!module.title?.trim() && !module.subtitle?.trim()) {
+      suggestions.push(`简历模块第 ${index + 1} 项缺少标题或副标题`)
+    }
+
+    if (!module.content?.trim()) {
+      suggestions.push(`简历模块「${module.title || module.subtitle || `第 ${index + 1} 项`}」尚未填写内容`)
+    }
+  })
+
+  return suggestions
 }

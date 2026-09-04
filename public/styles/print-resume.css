@@ -31,14 +31,19 @@
     font-family: "NotoSansSC", var(--font-noto-sans), sans-serif !important;
   }
   
-  /* 简历内容样式 */
-  .resume-content, .resume-preview {
-    width: 100% !important;
-    max-width: none !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    box-shadow: none !important;
-    border: none !important;
+  /* 当前主预览通过 iframe/Puppeteer 生成，打印时只隐藏编辑器外壳。 */
+  .editor-toolbar,
+  .editor-panel {
+    display: none !important;
+  }
+
+  .resume-editor,
+  .editor-content,
+  .preview-panel {
+    display: block !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
     background: white !important;
   }
   

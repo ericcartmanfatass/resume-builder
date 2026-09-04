@@ -6,13 +6,17 @@
   "scripts": {
     "build": "next build",
     "dev": "next dev",
-    "lint": "next lint",
+    "lint": "npm run typecheck",
+    "typecheck": "tsc -p tsconfig.typecheck.json --noEmit",
+    "db:check": "node scripts/database.mjs --check",
+    "db:init": "node scripts/database.mjs --init",
     "start": "next start"
   },
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",
     "@iconify/react": "latest",
     "@iconify/utils": "^3.0.1",
+    "@logto/next": "^4.2.10",
     "@radix-ui/react-collapsible": "latest",
     "@radix-ui/react-dialog": "1.1.4",
     "@radix-ui/react-label": "2.1.1",
@@ -31,15 +35,19 @@
     "marked": "^16.4.1",
     "next": "15.2.8",
     "next-themes": "^0.4.6",
+    "pg": "^8.23.0",
     "puppeteer-core": "^24.26.1",
     "react": "^19",
     "react-dom": "^19",
+    "server-only": "^0.0.1",
     "tailwind-merge": "^2.5.5",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "zod": "^4.5.4"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.9",
     "@types/node": "^22",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "postcss": "^8.5",

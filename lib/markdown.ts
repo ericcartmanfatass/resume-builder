@@ -1,4 +1,14 @@
 import { marked } from "marked";
+import { sanitizeHtml } from "@/lib/html-safety";
+
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
 
 /**
  * 将 Markdown 文本转换为 HTML
@@ -9,10 +19,10 @@ export function renderMarkdown(md: string): string {
   if (!md) return "";
   
   try {
-    return marked.parse(md) as string;
+    return sanitizeHtml(marked.parse(md) as string);
   } catch (error) {
     console.error("Markdown 解析错误:", error);
-    return md; // 解析失败时返回原文本
+    return escapeHtml(md);
   }
 }
 

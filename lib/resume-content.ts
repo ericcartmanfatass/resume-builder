@@ -1,4 +1,5 @@
 import type { ModuleContentMode, ResumeModule } from "@/types/resume"
+import { sanitizeHtml } from "@/lib/html-safety"
 import { renderMarkdown } from "@/lib/markdown"
 
 export function normalizeContentMode(mode?: ModuleContentMode): ModuleContentMode {
@@ -11,7 +12,7 @@ export function renderModuleContent(module: Pick<ResumeModule, "content" | "cont
   }
 
   return normalizeContentMode(module.contentMode) === "rich-text"
-    ? module.content
+    ? sanitizeHtml(module.content)
     : renderMarkdown(module.content)
 }
 

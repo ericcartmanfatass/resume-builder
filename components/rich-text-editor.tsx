@@ -11,10 +11,10 @@ interface RichTextEditorProps {
 }
 
 const toolbarItems = [
-  { icon: "mdi:format-bold", command: "bold", label: "加粗" },
-  { icon: "mdi:format-italic", command: "italic", label: "斜体" },
-  { icon: "mdi:format-list-bulleted", command: "insertUnorderedList", label: "无序列表" },
-  { icon: "mdi:format-list-numbered", command: "insertOrderedList", label: "有序列表" },
+  { icon: "mdi:format-bold", command: "bold", value: undefined, label: "加粗" },
+  { icon: "mdi:format-italic", command: "italic", value: undefined, label: "斜体" },
+  { icon: "mdi:format-list-bulleted", command: "insertUnorderedList", value: undefined, label: "无序列表" },
+  { icon: "mdi:format-list-numbered", command: "insertOrderedList", value: undefined, label: "有序列表" },
   { icon: "mdi:format-quote-close", command: "formatBlock", value: "blockquote", label: "引用" },
   { icon: "mdi:code-tags", command: "formatBlock", value: "pre", label: "代码块" },
 ] as const

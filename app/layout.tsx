@@ -4,6 +4,7 @@ import { GeistMono } from "geist/font/mono";
 import "./globals.css";
 import { Toaster } from "@/components/toaster";
 import localFont from "next/font/local";
+import { AccountProvider } from "@/components/account-provider";
 
 // 定义 NotoSansSC 字体
 const notoSansSC = localFont({
@@ -37,7 +38,7 @@ html {
         <link rel="stylesheet" href="/styles/print-resume.css" media="print" />
       </head>
       <body className={notoSansSC.className}>
-        {children}
+        <AccountProvider>{children}</AccountProvider>
         <Toaster />
       </body>
     </html>

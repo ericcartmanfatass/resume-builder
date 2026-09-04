@@ -1,0 +1,68 @@
+"use client"
+
+import { useState } from "react"
+import { Files, CloudUpload, Share2 } from "lucide-react"
+import { AccountAction } from "@/components/account-action"
+import type { CloudResumeControls as Controls } from "@/hooks/use-cloud-resume"
+import { useAccount } from "@/components/account-provider"
+import { useToast } from "@/hooks/use-toast"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+
+export function CloudResumeControls({ cloud, ready }: { cloud: Controls; ready: boolean }) {
+  const { session, confirm } = useAccount()
+  const { toast } = useToast()
+  const [listOpen, setListOpen] = useState(false)
+  const [shareOpen, setShareOpen] = useState(false)
+  const notifyError = (cause: unknown) => toast({ title: "操作未完成", description: cause instanceof Error ? cause.message : "请稍后重试。", variant: "destructive" })
+  const shareUrl = cloud.active?.shareToken && typeof window !== "undefined" ? `${window.location.origin}/s/${cloud.active.shareToken}` : ""
+
+  if (!session?.user) return null
+  return <>
+    <section className="space-y-3" aria-label="云端简历管理">
+    <div className="flex items-center justify-between gap-3"><h3 className="text-sm font-semibold">简历与分享</h3><span className="text-xs text-muted-foreground" role="status">{cloud.status}</span></div>
+    <div className="divide-y divide-border/60">
+    <AccountAction icon={Files} label="云端简历" description="管理已保存的简历与在线预览" disabled={!ready || cloud.busy} onClick={() => { setListOpen(true); void cloud.refreshList().catch(notifyError) }} />
+    <AccountAction icon={CloudUpload} label={cloud.busy ? "同步中…" : cloud.active ? "保存云端" : "保存到云端"} description="同步当前草稿，随时继续编辑" disabled={!ready || cloud.busy} onClick={() => void cloud.save().catch(notifyError)} />
+    <AccountAction icon={Share2} label="分享" description="发布、更新或关闭简历分享链接" disabled={!ready || cloud.busy} onClick={() => setShareOpen(true)} />
+    </div>
+    {cloud.error && <div role="alert" className="flex basis-full flex-wrap items-center gap-2 text-xs text-destructive">
+      <span>{cloud.error}</span>
+      <button className="underline" disabled={cloud.busy} onClick={() => void cloud.save(true).catch(notifyError)}>另存云端副本</button>
+      {cloud.active && <button className="underline" disabled={cloud.busy} onClick={async () => { if (await confirm("重新打开云端版本将替换当前本地草稿。建议先下载本地文件备份，是否继续？")) void cloud.load(cloud.active!.id, true).catch(notifyError) }}>重新打开云端版本</button>}
+    </div>}
+    </section>
+    <Dialog open={listOpen} onOpenChange={setListOpen}>
+      <DialogContent className="sm:max-w-xl">
+        <DialogHeader><DialogTitle>我的云端简历</DialogTitle><DialogDescription>打开后自动保存到云端；发布的分享内容需要手动更新。</DialogDescription></DialogHeader>
+        <div className="max-h-[55vh] space-y-3 overflow-y-auto">
+          {cloud.resumes.length === 0 && <p className="py-6 text-center text-sm text-muted-foreground">还没有云端简历，点击“保存到云端”保存当前草稿。</p>}
+          {cloud.resumes.map((resume) => <div key={resume.id} className="space-y-3 rounded-lg border p-3">
+            <div><p className="truncate font-medium">{resume.title || "未命名简历"}{cloud.active?.id === resume.id && <span className="ml-2 text-xs text-muted-foreground">当前</span>}</p><p className="text-xs text-muted-foreground">{new Date(resume.updatedAt).toLocaleString("zh-CN")}{resume.shareToken ? " · 已分享" : " · 仅自己可见"}</p></div>
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" disabled={cloud.busy} onClick={async () => {
+                if ((!cloud.active || cloud.error) && !(await confirm("打开云端简历将替换当前本地草稿。请确认已保存或下载需要保留的内容。"))) return
+                void cloud.load(resume.id, Boolean(cloud.error)).then(() => setListOpen(false)).catch(notifyError)
+              }}>打开编辑</Button>
+              <Button size="sm" variant="outline" asChild><a href={`/resumes/${resume.id}`} target="_blank" rel="noopener noreferrer">在线预览</a></Button>
+              <Button size="sm" variant="outline" disabled={cloud.busy} onClick={async () => { if (await confirm(`删除“${resume.title || "未命名简历"}”？对应分享链接也会失效，此操作无法撤销。`)) void cloud.remove(resume.id).catch(notifyError) }}>删除</Button>
+            </div>
+          </div>)}
+        </div>
+        <Button variant="outline" disabled={cloud.busy} onClick={() => void cloud.save(true).then(() => setListOpen(false)).catch(notifyError)}>将当前草稿另存为新简历</Button>
+      </DialogContent>
+    </Dialog>
+    <Dialog open={shareOpen} onOpenChange={setShareOpen}>
+      <DialogContent>
+        <DialogHeader><DialogTitle>分享简历</DialogTitle><DialogDescription>任何拿到链接的人都可以查看发布的简历，包括联系方式。发布后，编辑草稿不会自动更新分享内容。</DialogDescription></DialogHeader>
+        {shareUrl && <div className="space-y-3"><Input aria-label="分享链接" readOnly value={shareUrl} onFocus={(event) => event.target.select()} /><div className="flex gap-2">
+          <Button size="sm" variant="outline" onClick={() => void navigator.clipboard.writeText(shareUrl).then(() => toast({ title: "链接已复制" })).catch(() => toast({ title: "请选中上方链接手动复制" }))}>复制链接</Button>
+          <Button size="sm" variant="outline" asChild><a href={shareUrl} target="_blank" rel="noopener noreferrer">打开预览</a></Button>
+          <Button size="sm" variant="outline" disabled={cloud.busy} onClick={() => void cloud.revoke().catch(notifyError)}>关闭分享</Button>
+        </div></div>}
+        <Button disabled={cloud.busy || !ready} onClick={() => void cloud.publish().then(() => toast({ title: "分享已发布", description: "链接展示的是本次发布的版本。" })).catch(notifyError)}>{cloud.busy ? "正在发布…" : shareUrl ? "保存并更新分享" : "保存并创建分享链接"}</Button>
+      </DialogContent>
+    </Dialog>
+  </>
+}

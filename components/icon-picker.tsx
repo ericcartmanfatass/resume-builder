@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -85,15 +85,20 @@ export default function IconPicker({ selectedIcon, onSelect }: IconPickerProps) 
   const [searchTerm, setSearchTerm] = useState("")
   const [searchResults, setSearchResults] = useState<{icon: string, label: string}[]>([])
   const [isSearching, setIsSearching] = useState(false)
+  const [iconBodies, setIconBodies] = useState<Record<string, string>>({})
 
   // 初始显示常用图标列表
-  const filteredIcons = searchTerm ? 
-    searchResults : 
-    COMMON_ICONS.filter(
-      ({ icon, label }) => 
-        icon.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        label.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+  const filteredIcons = useMemo(
+    () =>
+      searchTerm
+        ? searchResults
+        : COMMON_ICONS.filter(
+            ({ icon, label }) =>
+              icon.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              label.toLowerCase().includes(searchTerm.toLowerCase()),
+          ),
+    [searchResults, searchTerm],
+  )
 
   // 使用Iconify API搜索图标
   useEffect(() => {
@@ -129,6 +134,37 @@ export default function IconPicker({ selectedIcon, onSelect }: IconPickerProps) 
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
+  useEffect(() => {
+    let isMounted = true
+    const missingIcons = filteredIcons
+      .map(({ icon }) => icon)
+      .filter((icon) => !iconBodies[icon])
+
+    if (missingIcons.length === 0) {
+      return
+    }
+
+    Promise.all(
+      missingIcons.map(async (icon) => {
+        const body = await getIconSvgPath(icon)
+        return [icon, body || ""] as const
+      }),
+    ).then((entries) => {
+      if (!isMounted) {
+        return
+      }
+
+      setIconBodies((prev) => ({
+        ...prev,
+        ...Object.fromEntries(entries),
+      }))
+    })
+
+    return () => {
+      isMounted = false
+    }
+  }, [filteredIcons, iconBodies]);
+
   return (
     <div className="space-y-4">
       {/* 搜索框 */}
@@ -160,9 +196,15 @@ export default function IconPicker({ selectedIcon, onSelect }: IconPickerProps) 
           {filteredIcons.map(({ icon, label }) => (
             <Button
               key={icon}
-              variant={selectedIcon === icon ? "default" : "outline"}
+              variant={selectedIcon && iconBodies[icon] === selectedIcon ? "default" : "outline"}
               size="sm"
               onClick={() => {
+                const iconBody = iconBodies[icon]
+                if (iconBody) {
+                  onSelect(iconBody)
+                  return
+                }
+
                 getIconSvgPath(icon).then(svgPath => {
                   onSelect(svgPath || "");
                 });

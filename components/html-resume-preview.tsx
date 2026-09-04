@@ -7,16 +7,19 @@ import type { ResumeData } from "@/types/resume"
 interface HtmlResumePreviewProps {
   resumeData: ResumeData
   className?: string
+  embedded?: boolean
 }
 
-export default function HtmlResumePreview({ resumeData, className }: HtmlResumePreviewProps) {
-  const html = useMemo(() => buildResumeHtml(resumeData), [resumeData])
+export default function HtmlResumePreview({ resumeData, className, embedded = false }: HtmlResumePreviewProps) {
+  const html = useMemo(() => buildResumeHtml(resumeData, { embedded }), [resumeData, embedded])
 
   return (
     <iframe
+      key={resumeData.updatedAt}
       title="Resume HTML Preview"
       srcDoc={html}
-      className={className ?? "h-full w-full border-0 bg-white"}
+      sandbox=""
+      className={className ?? "block h-full w-full border-0 bg-white"}
     />
   )
 }
