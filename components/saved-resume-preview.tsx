@@ -22,7 +22,7 @@ export function SavedResumePreview({
           </h1>
           <p className="text-xs text-muted-foreground">
             {shareToken
-              ? "只读分享 · 内容以作者发布的版本为准"
+              ? "只读分享 · 内容与作者云端保存版本同步"
               : "个人预览 · 仅自己可见"}
           </p>
         </div>

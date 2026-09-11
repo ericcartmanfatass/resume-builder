@@ -164,9 +164,10 @@ export function buildResumeHtml(resumeData: ResumeData, { embedded = false }: { 
           }
 
           .personal-info-value {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            min-width: 0;
+            white-space: normal;
+            overflow-wrap: anywhere;
+            word-break: break-word;
             line-height: 1.7;
           }
 

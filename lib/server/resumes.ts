@@ -26,12 +26,19 @@ export async function createResume(ownerId: string, data: ResumeData) {
 }
 
 export async function updateResume(ownerId: string, id: string, data: ResumeData, version: number) {
-  const result = await database().query(`UPDATE ${tables.resumes} r SET data = $1, version = version + 1, updated_at = now() WHERE id = $2 AND owner_id = $3 AND version = $4 RETURNING r.id, r.data, r.version, r.updated_at AS "updatedAt", (SELECT CASE WHEN snapshot <> 'null'::jsonb THEN token ELSE NULL END FROM ${tables.shares} WHERE resume_id = r.id) AS "shareToken", (SELECT CASE WHEN length(token) < 32 THEN token ELSE NULL END FROM ${tables.shares} WHERE resume_id = r.id) AS "customShareToken"`, [JSON.stringify(data), id, ownerId, version])
-  if (!result.rowCount) {
-    await readResume(ownerId, id)
-    throw new ApiError(409, "VERSION_CONFLICT", "简历已在其他页面更新。请另存副本，或重新打开云端版本。")
-  }
-  return { ...result.rows[0], title: result.rows[0].data.title } as CloudResume
+  return transaction(async (client) => {
+    const serialized = JSON.stringify(data)
+    const result = await client.query(`UPDATE ${tables.resumes} r SET data = $1, version = version + 1, updated_at = now() WHERE id = $2 AND owner_id = $3 AND version = $4 RETURNING r.id, r.data, r.version, r.updated_at AS "updatedAt", (SELECT CASE WHEN snapshot <> 'null'::jsonb THEN token ELSE NULL END FROM ${tables.shares} WHERE resume_id = r.id) AS "shareToken", (SELECT CASE WHEN length(token) < 32 THEN token ELSE NULL END FROM ${tables.shares} WHERE resume_id = r.id) AS "customShareToken"`, [serialized, id, ownerId, version])
+    if (!result.rowCount) {
+      const existing = await client.query(`SELECT 1 FROM ${tables.resumes} WHERE id = $1 AND owner_id = $2`, [id, ownerId])
+      if (!existing.rowCount) throw new ApiError(404, "NOT_FOUND", "简历不存在或已删除。")
+      throw new ApiError(409, "VERSION_CONFLICT", "简历已在其他页面更新。请另存副本，或重新打开云端版本。")
+    }
+    // Active share pages follow the saved cloud document. A reserved custom URL
+    // uses a JSON null snapshot and must stay unpublished until explicitly shared.
+    await client.query(`UPDATE ${tables.shares} SET snapshot = $1, updated_at = now() WHERE resume_id = $2 AND snapshot <> 'null'::jsonb`, [serialized, id])
+    return { ...result.rows[0], title: result.rows[0].data.title } as CloudResume
+  })
 }
 
 export async function deleteResume(ownerId: string, id: string) {
@@ -78,6 +85,6 @@ export async function revokeShare(ownerId: string, id: string) {
 
 export async function readShare(token: string): Promise<ResumeData | null> {
   if (!/^(?:[A-Za-z0-9_-]{32}|[a-z0-9][a-z0-9-]{1,28}[a-z0-9])$/.test(token)) return null
-  const result = await database().query(`SELECT snapshot FROM ${tables.shares} WHERE token = $1`, [token])
-  return result.rows[0]?.snapshot || null
+  const result = await database().query(`SELECT r.data FROM ${tables.shares} s JOIN ${tables.resumes} r ON r.id = s.resume_id WHERE s.token = $1 AND s.snapshot <> 'null'::jsonb`, [token])
+  return result.rows[0]?.data || null
 }

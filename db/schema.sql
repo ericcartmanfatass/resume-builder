@@ -43,7 +43,7 @@ COMMENT ON COLUMN public.resumes.updated_at IS '云端记录最近保存时间�
 COMMENT ON TABLE public.shares IS '已发布的只读简历分享；每份简历最多一个有效链接，内容为手动发布的快照，撤销分享时删除记录。';
 COMMENT ON COLUMN public.shares.token IS '分享链接标识：默认是 32 字符随机 Base64URL，也可为 3 至 30 字符自定义短链；用于 /s/:token。';
 COMMENT ON COLUMN public.shares.resume_id IS '关联的云端简历 UUID，唯一且外键指向 resumes.id；删除简历时级联删除分享记录。';
-COMMENT ON COLUMN public.shares.snapshot IS '最近一次发布的完整简历 JSON 快照；JSON null 表示自定义短链已保留但分享已关闭。';
+COMMENT ON COLUMN public.shares.snapshot IS '当前公开分享的简历 JSON 快照；分享开启时随云端保存同步更新，JSON null 表示自定义短链已保留但分享已关闭。';
 COMMENT ON COLUMN public.shares.updated_at IS '分享首次发布或最近一次更新快照的时间；自定义链接关闭后重新发布仍复用，随机链接保持重新生成逻辑。';
 
 COMMENT ON TABLE public.export_jobs IS 'PDF 导出任务与额度记录；用于游客累计两次限制、指纹/IP 风控和各身份的并发及频率限制，不存储 PDF 文件。';

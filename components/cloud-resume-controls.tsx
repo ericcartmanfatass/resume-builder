@@ -35,7 +35,7 @@ export function CloudResumeControls({ cloud, ready }: { cloud: Controls; ready: 
     setCustomTokenError("")
     try {
       await cloud.publish(normalized || null)
-      toast({ title: "分享已发布", description: normalized ? "自定义链接已保留，关闭后重新分享仍使用此地址。" : "链接展示的是本次发布的版本。" })
+      toast({ title: "分享已发布", description: normalized ? "自定义链接已保留，云端保存后分享内容会同步更新。" : "云端保存后，分享内容会同步更新。" })
     } catch (cause) {
       notifyError(cause)
     }
@@ -58,7 +58,7 @@ export function CloudResumeControls({ cloud, ready }: { cloud: Controls; ready: 
     </section>
     <Dialog open={listOpen} onOpenChange={setListOpen}>
       <DialogContent className="sm:max-w-xl">
-        <DialogHeader><DialogTitle>我的云端简历</DialogTitle><DialogDescription>打开后自动保存到云端；发布的分享内容需要手动更新。</DialogDescription></DialogHeader>
+        <DialogHeader><DialogTitle>我的云端简历</DialogTitle><DialogDescription>打开后自动保存到云端；已开启分享的内容会随云端保存同步更新。</DialogDescription></DialogHeader>
         <div className="max-h-[55vh] space-y-3 overflow-y-auto">
           {cloud.resumes.length === 0 && <p className="py-6 text-center text-sm text-muted-foreground">还没有云端简历，点击“保存到云端”保存当前草稿。</p>}
           {cloud.resumes.map((resume) => <div key={resume.id} className="space-y-3 rounded-lg border p-3">
@@ -78,7 +78,7 @@ export function CloudResumeControls({ cloud, ready }: { cloud: Controls; ready: 
     </Dialog>
     <Dialog open={shareOpen} onOpenChange={setShareOpen}>
       <DialogContent>
-        <DialogHeader><DialogTitle>分享简历</DialogTitle><DialogDescription>任何拿到链接的人都可以查看发布的简历，包括联系方式。发布后，编辑草稿不会自动更新分享内容。</DialogDescription></DialogHeader>
+        <DialogHeader><DialogTitle>分享简历</DialogTitle><DialogDescription>任何拿到链接的人都可以查看简历，包括联系方式。分享开启后，每次云端保存都会同步更新链接中的内容。</DialogDescription></DialogHeader>
         <div className="space-y-2">
           <label htmlFor="custom-share-token" className="text-sm font-medium">自定义链接 <span className="font-normal text-muted-foreground">（可选）</span></label>
           <div className="flex items-center rounded-md border bg-background focus-within:ring-2 focus-within:ring-ring/50">
