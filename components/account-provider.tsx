@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import type { AccountSession } from "@/types/account"
 import { browserFingerprint } from "@/lib/fingerprint"
 import { apiRequest } from "@/lib/api-client"
+import { startSignIn } from "@/app/auth-actions"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
@@ -61,7 +62,7 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
   }, [refresh])
   const signIn = useCallback(() => {
     window.dispatchEvent(new Event("resume:flush-draft"))
-    window.location.assign("/sign-in")
+    void startSignIn()
   }, [])
 
   return <AccountContext.Provider value={{ session, loading, error, refresh, signIn, confirm, requireLogin: () => setLoginPrompt(true) }}>

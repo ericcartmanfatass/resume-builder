@@ -77,6 +77,7 @@ export function createBlankResumeData(): ResumeData {
       },
     ],
     avatar: "",
+    avatarShape: "circle",
     modules: [
       {
         id: `module-${Date.now()}-intro`,
@@ -100,6 +101,7 @@ export function exportToMagicyanFile(resumeData: ResumeData): string {
     data: {
       ...resumeData,
       avatar: sanitizeUrl(resumeData.avatar || "", { allowImages: true }),
+      avatarShape: resumeData.avatarShape === "square" ? "square" : "circle",
       personalInfo: resumeData.personalInfo.map(normalizePersonalInfoItem),
       modules: resumeData.modules.map((module, index) => normalizeModule(module, index)),
       updatedAt: new Date().toISOString(),
@@ -162,6 +164,7 @@ export function importFromMagicyanFile(fileContent: string): ResumeData {
     return {
       ...data,
       avatar: sanitizeUrl(data.avatar || "", { allowImages: true }),
+      avatarShape: data.avatarShape === "square" ? "square" : "circle",
       personalInfo: data.personalInfo.map(normalizePersonalInfoItem),
       modules: data.modules.map((module, index) => normalizeModule(module, index)),
       createdAt: data.createdAt || now,

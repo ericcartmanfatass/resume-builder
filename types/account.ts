@@ -13,5 +13,6 @@ export type CloudResumeSummary = {
   version: number
   updatedAt: string
   shareToken: string | null
+  customShareToken: string | null
 }
 export type CloudResume = CloudResumeSummary & { data: ResumeData }

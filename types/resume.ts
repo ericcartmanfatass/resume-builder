@@ -23,6 +23,7 @@ export interface ResumeData {
   personalInfo: PersonalInfoItem[]
   modules: ResumeModule[]
   avatar?: string
+  avatarShape?: "square" | "circle"
   createdAt: string
   updatedAt: string
 }

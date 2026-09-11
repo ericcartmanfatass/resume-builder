@@ -155,11 +155,11 @@
   }
 
   .editor-toolbar {
-    @apply border-b bg-card px-4 py-3 flex min-w-0 items-center gap-3 lg:px-6;
+    @apply sticky top-0 z-40 border-b bg-card/95 px-4 py-3 flex min-w-0 items-center gap-3 shadow-sm backdrop-blur lg:px-6;
   }
 
   .toolbar-title {
-    @apply flex min-w-0 shrink-0 items-center gap-3;
+    @apply flex min-w-0 max-w-[40vw] shrink items-center gap-3 overflow-hidden;
   }
 
   .toolbar-actions {
@@ -183,7 +183,7 @@
   }
 
   .preview-panel {
-    @apply min-h-[60vh] min-w-0 flex-1 bg-white overflow-hidden lg:min-h-0;
+    @apply min-h-[60vh] min-w-0 flex-1 overflow-hidden bg-slate-100 lg:min-h-0;
   }
 
   .pdf-preview-container {

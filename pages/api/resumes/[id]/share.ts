@@ -13,6 +13,9 @@ export default apiHandler(async (req, res) => {
     await revokeShare(user.id, id)
     return res.status(204).end()
   }
-  const { version } = z.object({ version: z.number().int().positive() }).parse(req.body)
-  res.json({ token: await publishResume(user.id, id, version) })
+  const { version, customToken } = z.object({
+    version: z.number().int().positive(),
+    customToken: z.string().regex(/^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$/).nullable().optional(),
+  }).parse(req.body)
+  res.json(await publishResume(user.id, id, version, customToken))
 })

@@ -11,6 +11,7 @@ export const resumeSchema = z.object({
     icon: z.string().max(20000).optional().transform(sanitizeSvgBody),
   })).max(50),
   avatar: z.string().max(4 * 1024 * 1024).optional().transform((v) => sanitizeUrl(v || "", { allowImages: true })),
+  avatarShape: z.enum(["square", "circle"]).optional(),
   modules: z.array(z.object({
     id: z.string().min(1).max(200),
     title: z.string().max(200),

@@ -57,7 +57,7 @@ export function useCloudResume(user: AccountUser | null, data: ResumeData, ready
         const stored = (raw ? JSON.parse(raw).metadata?.cloud : null) || (legacy ? JSON.parse(legacy) : null)
         if (stored) {
           if (typeof stored.id === "string" && Number.isInteger(stored.version)) {
-            const pendingLink = { id: stored.id, version: stored.version, title: current.current.title, updatedAt: current.current.updatedAt, shareToken: null }
+            const pendingLink = { id: stored.id, version: stored.version, title: current.current.title, updatedAt: current.current.updatedAt, shareToken: null, customShareToken: null }
             activeRef.current = pendingLink
             setActive(pendingLink)
             const { resume } = await apiRequest<{ resume: CloudResume }>(`/api/resumes/${encodeURIComponent(stored.id)}`)
@@ -154,13 +154,13 @@ export function useCloudResume(user: AccountUser | null, data: ResumeData, ready
     setError(null)
   }), [run, remember])
 
-  const publish = useCallback(() => run(async () => {
+  const publish = useCallback((customToken?: string | null) => run(async () => {
     const resume = await persist()
-    const { token } = await apiRequest<{ token: string }>(`/api/resumes/${resume.id}/share`, { method: "POST", body: JSON.stringify({ version: resume.version }) })
-    remember({ ...resume, shareToken: token })
-    setResumes((previous) => previous.map((item) => item.id === resume.id ? { ...item, shareToken: token } : item))
+    const published = await apiRequest<{ token: string; customShareToken: string | null }>(`/api/resumes/${resume.id}/share`, { method: "POST", body: JSON.stringify({ version: resume.version, customToken }) })
+    remember({ ...resume, shareToken: published.token, customShareToken: published.customShareToken })
+    setResumes((previous) => previous.map((item) => item.id === resume.id ? { ...item, shareToken: published.token, customShareToken: published.customShareToken } : item))
     setError(null)
-    return token
+    return published.token
   }), [run, persist, remember])
 
   const revoke = useCallback(() => run(async () => {

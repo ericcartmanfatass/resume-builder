@@ -8,6 +8,9 @@ import {
 
 export function buildResumeHtml(resumeData: ResumeData, { embedded = false }: { embedded?: boolean } = {}): string {
   const safeAvatar = sanitizeUrl(resumeData.avatar || "", { allowImages: true })
+  const titleLength = Array.from(resumeData.title || "").length
+  const titleSizeClass = titleLength > 32 ? "resume-title-long" : titleLength > 20 ? "resume-title-medium" : ""
+  const avatarShapeClass = resumeData.avatarShape === "square" ? "avatar-square" : "avatar-circle"
 
   const personalInfoHtml = resumeData.personalInfo
     .map((item) => {
@@ -105,7 +108,7 @@ export function buildResumeHtml(resumeData: ResumeData, { embedded = false }: { 
             min-height: 297mm;
             margin: 0 auto;
             background: #fff;
-            padding: 18mm 16mm;
+            padding: 12mm;
             box-shadow: 0 20px 60px rgba(15, 23, 42, 0.12);
           }
 
@@ -127,6 +130,17 @@ export function buildResumeHtml(resumeData: ResumeData, { embedded = false }: { 
             font-size: 28px;
             line-height: 1.2;
             font-weight: 700;
+            overflow-wrap: anywhere;
+          }
+
+          .resume-title-medium {
+            font-size: 23px;
+            line-height: 1.28;
+          }
+
+          .resume-title-long {
+            font-size: 19px;
+            line-height: 1.35;
           }
 
           .personal-info {
@@ -164,9 +178,16 @@ export function buildResumeHtml(resumeData: ResumeData, { embedded = false }: { 
           .avatar {
             width: 84px;
             height: 84px;
-            border-radius: 999px;
             object-fit: cover;
-            border: 2px solid #e5e7eb;
+            flex-shrink: 0;
+          }
+
+          .avatar-circle {
+            border-radius: 999px;
+          }
+
+          .avatar-square {
+            border-radius: 6px;
           }
 
           .resume-module {
@@ -295,7 +316,8 @@ export function buildResumeHtml(resumeData: ResumeData, { embedded = false }: { 
             }
             ${embedded ? `
             html, body { background: #fff; padding: 0; }
-            .page { width: 100%; min-width: 210mm; margin: 0; box-shadow: none; }
+            body { min-width: 210mm; }
+            .page { width: 210mm; min-width: 210mm; margin: 0 auto; box-shadow: none; }
             ` : ""}
           }
 
@@ -315,6 +337,16 @@ export function buildResumeHtml(resumeData: ResumeData, { embedded = false }: { 
               padding: 0;
               box-shadow: none;
             }
+
+            .resume-module {
+              margin-bottom: 12px;
+              page-break-inside: auto;
+              break-inside: auto;
+            }
+
+            .resume-header {
+              margin-bottom: 18px;
+            }
           }
         </style>
       </head>
@@ -322,12 +354,12 @@ export function buildResumeHtml(resumeData: ResumeData, { embedded = false }: { 
         <main class="page">
           <header class="resume-header">
             <div class="header-content">
-              <h1 class="resume-title">${escapeHtml(resumeData.title || "简历标题")}</h1>
+              <h1 class="resume-title ${titleSizeClass}">${escapeHtml(resumeData.title || "简历标题")}</h1>
               <div class="personal-info">
                 ${personalInfoHtml}
               </div>
             </div>
-            ${safeAvatar ? `<img src="${escapeHtml(safeAvatar)}" alt="头像" class="avatar" />` : ""}
+            ${safeAvatar ? `<img src="${escapeHtml(safeAvatar)}" alt="头像" class="avatar ${avatarShapeClass}" />` : ""}
           </header>
           ${modulesHtml}
           ${
