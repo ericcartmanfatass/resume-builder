@@ -52,7 +52,9 @@ function getEmbeddedFontStyle() {
         font-family: "ResumeCJK";
         src: url(data:font/ttf;base64,${fontBase64}) format("truetype");
         font-style: normal;
-        font-weight: 400 700;
+        /* This is a static Medium font, not a variable font. Register one
+           normal weight so Chromium synthesizes bold for strong/b text. */
+        font-weight: 400;
       }
 
       html,

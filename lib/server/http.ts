@@ -37,7 +37,19 @@ export function allowMethods(req: NextApiRequest, res: NextApiResponse, methods:
 }
 
 export function requireSameOrigin(req: NextApiRequest) {
-  if (req.headers.origin !== appBaseUrl()) {
+  // Next dev can choose another port, or be opened through 127.0.0.1.
+  // Only accept loopback origins matching the actual request host in development.
+  let localDevelopmentOrigin = false
+  if (process.env.NODE_ENV === "development" && req.headers.origin) {
+    try {
+      const origin = new URL(req.headers.origin)
+      localDevelopmentOrigin = ["http:", "https:"].includes(origin.protocol)
+        && ["localhost", "127.0.0.1", "[::1]"].includes(origin.hostname)
+        && origin.host === req.headers.host
+        && origin.origin === req.headers.origin
+    } catch { /* Invalid origins are rejected below. */ }
+  }
+  if (!localDevelopmentOrigin && req.headers.origin !== appBaseUrl()) {
     throw new ApiError(403, "INVALID_ORIGIN", "请从本站发起操作。")
   }
   if (!req.headers["content-type"]?.toLowerCase().startsWith("application/json")) {

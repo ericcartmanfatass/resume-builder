@@ -11,9 +11,11 @@ export function renderModuleContent(module: Pick<ResumeModule, "content" | "cont
     return ""
   }
 
-  return normalizeContentMode(module.contentMode) === "rich-text"
-    ? sanitizeHtml(module.content)
-    : renderMarkdown(module.content)
+  if (normalizeContentMode(module.contentMode) === "rich-text" && /<\/?[a-z][^>]*>/i.test(module.content)) {
+    return sanitizeHtml(module.content)
+  }
+
+  return renderMarkdown(module.content)
 }
 
 export function escapeHtml(value: string): string {

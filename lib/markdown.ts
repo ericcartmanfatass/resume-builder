@@ -1,6 +1,23 @@
 import { marked } from "marked";
 import { sanitizeHtml } from "@/lib/html-safety";
 
+// Chinese punctuation and spaces next to ** are common in pasted resume text.
+// Parse these pairs as emphasis too, while leaving code spans/blocks to marked.
+marked.use({
+  extensions: [{
+    name: "resumeStrong",
+    level: "inline",
+    start: (source: string) => source.indexOf("**"),
+    tokenizer(source: string) {
+      const match = /^\*\*(?!\*)([^\n]+?)\*\*(?!\*)/.exec(source);
+      const text = match?.[1].trim();
+      if (match && text) {
+        return { type: "strong", raw: match[0], text, tokens: this.lexer.inlineTokens(text) };
+      }
+    },
+  }],
+});
+
 function escapeHtml(value: string): string {
   return value
     .replaceAll("&", "&amp;")

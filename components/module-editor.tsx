@@ -7,6 +7,7 @@ import { Icon } from "@iconify/react"
 import IconPicker from "@/components/icon-picker"
 import RichTextEditor from "@/components/rich-text-editor"
 import { sanitizeSvgBody } from "@/lib/html-safety"
+import { renderModuleContent } from "@/lib/resume-content"
 import { createNewModule } from "@/lib/resume-utils"
 import type { ModuleContentMode, ResumeModule } from "@/types/resume"
 import { Button } from "@/components/ui/button"
@@ -239,7 +240,10 @@ function ModuleItemEditor({ module, isExpanded, onToggle, onUpdate, onRemove }: 
                     variant={contentMode === "rich-text" ? "default" : "ghost"}
                     size="sm"
                     className="h-8"
-                    onClick={() => onUpdate({ contentMode: "rich-text" })}
+                    onClick={() => onUpdate({
+                      contentMode: "rich-text",
+                      content: renderModuleContent(module),
+                    })}
                   >
                     富文本
                   </Button>
