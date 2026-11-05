@@ -535,7 +535,7 @@ export default function ResumeBuilder({ user }: { user: AccountUser | null }) {
               <Icon icon={cloud.busy ? "mdi:loading" : "mdi:content-save-outline"} className={`h-4 w-4 ${cloud.busy ? "animate-spin" : ""}`} />
               {cloud.busy ? "同步中…" : cloud.active ? "云端同步" : "保存"}
             </Button>
-            <PDFExportButton resumeData={editorState.resumeData} size="sm" />
+            <div className="[&>button]:w-full"><PDFExportButton resumeData={editorState.resumeData} size="sm" /></div>
           </div>
           <div className="flex items-center gap-2">
             <div className="grid min-w-0 flex-1 grid-cols-2 rounded-lg bg-muted p-1" role="tablist" aria-label="编辑与预览">
