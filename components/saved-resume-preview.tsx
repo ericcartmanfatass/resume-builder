@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import HtmlResumePreview from "@/components/html-resume-preview";
+import ResponsiveResumePreview from "@/components/responsive-resume-preview";
+import { useCompactLayout } from "@/hooks/use-compact-layout";
 import PDFExportButton from "@/components/pdf-export-button";
 import { AccountMenu } from "@/components/account-menu";
 import type { ResumeData } from "@/types/resume";
@@ -13,8 +15,9 @@ export function SavedResumePreview({
   data: ResumeData;
   shareToken?: string;
 }) {
+  const isCompact = useCompactLayout();
   return (
-    <main className="flex h-screen min-h-0 flex-col bg-white">
+    <main className="flex h-dvh min-h-0 flex-col bg-white lg:h-screen">
       <header className="flex flex-wrap items-center justify-between gap-4 border-b bg-card px-4 py-3 sm:px-6">
         <div className="min-w-0">
           <h1 className="truncate text-lg font-semibold">
@@ -39,11 +42,15 @@ export function SavedResumePreview({
         </div>
       </header>
       <div className="min-h-0 flex-1 overflow-hidden bg-white">
+        {isCompact ? (
+          <ResponsiveResumePreview resumeData={data} />
+        ) : (
         <HtmlResumePreview
           resumeData={data}
           embedded
           className="block h-full w-full border-0 bg-white"
         />
+        )}
       </div>
     </main>
   );
