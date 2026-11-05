@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import dynamic from "next/dynamic"
-import { DragDropContext, Draggable, Droppable, type DropResult } from "@hello-pangea/dnd"
+import { DragDropContext, Draggable, Droppable, type DropResult, type DraggableProvided } from "@hello-pangea/dnd"
 import { Icon } from "@iconify/react"
 import IconPicker from "@/components/icon-picker"
 import RichTextEditor from "@/components/rich-text-editor"
@@ -94,13 +94,13 @@ export default function ModuleEditor({ modules, onUpdate }: ModuleEditorProps) {
                       <div
                         ref={draggableProvided.innerRef}
                         {...draggableProvided.draggableProps}
-                        {...draggableProvided.dragHandleProps}
                         style={{
                           ...draggableProvided.draggableProps.style,
                           opacity: snapshot.isDragging ? 0.82 : 1,
                         }}
                       >
                         <ModuleItemEditor
+                          dragHandleProps={draggableProvided.dragHandleProps}
                           module={module}
                           isExpanded={expandedModules.has(module.id)}
                           onToggle={() => toggleModule(module.id)}
@@ -128,6 +128,7 @@ export default function ModuleEditor({ modules, onUpdate }: ModuleEditorProps) {
 }
 
 interface ModuleItemEditorProps {
+  dragHandleProps?: DraggableProvided["dragHandleProps"]
   module: ResumeModule
   isExpanded: boolean
   onToggle: () => void
@@ -135,7 +136,7 @@ interface ModuleItemEditorProps {
   onRemove: () => void
 }
 
-function ModuleItemEditor({ module, isExpanded, onToggle, onUpdate, onRemove }: ModuleItemEditorProps) {
+function ModuleItemEditor({ module, isExpanded, onToggle, onUpdate, onRemove, dragHandleProps }: ModuleItemEditorProps) {
   const contentMode: ModuleContentMode = module.contentMode === "rich-text" ? "rich-text" : "markdown"
   const iconBody = sanitizeSvgBody(module.icon)
 
@@ -144,18 +145,20 @@ function ModuleItemEditor({ module, isExpanded, onToggle, onUpdate, onRemove }: 
       <div className="rounded-lg border bg-muted/30">
         <CollapsibleTrigger asChild>
           <div className="flex cursor-pointer items-center justify-between p-3 transition-colors hover:bg-muted/50">
-            <div className="flex items-center gap-3">
-              <Icon icon="mdi:drag" className="h-4 w-4 cursor-grab text-muted-foreground active:cursor-grabbing" />
+            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+              <button type="button" {...dragHandleProps} onClick={(event) => event.stopPropagation()} aria-label="拖动排序模块" className="flex size-9 shrink-0 touch-none items-center justify-center rounded-md text-muted-foreground hover:bg-muted">
+                <Icon icon="mdi:drag" className="h-4 w-4 cursor-grab active:cursor-grabbing" />
+              </button>
               {iconBody ? (
                 <svg width={16} height={16} viewBox="0 0 24 24" dangerouslySetInnerHTML={{ __html: iconBody }} />
               ) : (
                 <div className="h-4 w-4 rounded-sm border border-dashed border-gray-400" />
               )}
-              <span className="font-medium">{module.title || "未命名模块"}</span>
-              <span className="rounded-full bg-background px-2 py-0.5 text-xs text-muted-foreground">
+              <span className="min-w-0 truncate font-medium">{module.title || "未命名模块"}</span>
+              <span className="hidden shrink-0 rounded-full bg-background px-2 py-0.5 text-xs text-muted-foreground sm:inline">
                 {contentMode === "markdown" ? "Markdown" : "富文本"}
               </span>
-              {module.subtitle && <span className="text-sm text-muted-foreground">- {module.subtitle}</span>}
+              {module.subtitle && <span className="hidden min-w-0 truncate text-sm text-muted-foreground md:inline">- {module.subtitle}</span>}
             </div>
             <Icon icon={isExpanded ? "mdi:chevron-up" : "mdi:chevron-down"} className="h-4 w-4 text-muted-foreground" />
           </div>
@@ -169,7 +172,7 @@ function ModuleItemEditor({ module, isExpanded, onToggle, onUpdate, onRemove }: 
               </Button>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="form-group">
                 <Label className="form-label">大标题</Label>
                 <Input
@@ -203,7 +206,7 @@ function ModuleItemEditor({ module, isExpanded, onToggle, onUpdate, onRemove }: 
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="form-group">
                 <Label className="form-label">副标题</Label>
                 <Input
@@ -223,7 +226,7 @@ function ModuleItemEditor({ module, isExpanded, onToggle, onUpdate, onRemove }: 
             </div>
 
             <div className="form-group space-y-3">
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <Label className="form-label">详细内容</Label>
                 <div className="inline-flex rounded-md border bg-background p-1">
                   <Button
