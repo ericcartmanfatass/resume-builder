@@ -4,6 +4,8 @@ import type React from "react";
 import { memo, useCallback, useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
 import HtmlResumePreview from "@/components/html-resume-preview";
+import ResponsiveResumePreview from "@/components/responsive-resume-preview";
+import { useCompactLayout } from "@/hooks/use-compact-layout";
 import ModuleEditor from "@/components/module-editor";
 import PDFExportButton from "@/components/pdf-export-button";
 import PersonalInfoEditor from "@/components/personal-info-editor";
@@ -94,6 +96,8 @@ export default function ResumeBuilder({ user }: { user: AccountUser | null }) {
     showPreview: true,
   });
   const [viewMode, setViewMode] = useState<ViewMode>("both");
+  const [compactMode, setCompactMode] = useState<"edit" | "preview">("edit");
+  const isCompact = useCompactLayout();
   const [isHydrated, setIsHydrated] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [hasGuestDraft, setHasGuestDraft] = useState(false);
@@ -406,7 +410,7 @@ export default function ResumeBuilder({ user }: { user: AccountUser | null }) {
           )}
         </div>
 
-        <div className="toolbar-actions">
+        <div className="toolbar-actions desktop-toolbar-actions">
           <ViewModeSelector
             viewMode={viewMode}
             onViewModeChange={setViewMode}
@@ -520,6 +524,47 @@ export default function ResumeBuilder({ user }: { user: AccountUser | null }) {
 
           <PDFExportButton resumeData={editorState.resumeData} size="sm" />
         </div>
+        <div className="mobile-toolbar-actions">
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              size="sm"
+              onClick={() => void handleCloudSave()}
+              disabled={cloud.busy || !isHydrated}
+              className="min-h-10 gap-2"
+            >
+              <Icon icon={cloud.busy ? "mdi:loading" : "mdi:content-save-outline"} className={`h-4 w-4 ${cloud.busy ? "animate-spin" : ""}`} />
+              {cloud.busy ? "同步中…" : cloud.active ? "云端同步" : "保存"}
+            </Button>
+            <PDFExportButton resumeData={editorState.resumeData} size="sm" />
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="grid min-w-0 flex-1 grid-cols-2 rounded-lg bg-muted p-1" role="tablist" aria-label="编辑与预览">
+              <button type="button" role="tab" aria-selected={compactMode === "edit"} onClick={() => setCompactMode("edit")}
+                className={`min-h-10 rounded-md px-3 text-sm font-medium ${compactMode === "edit" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}>编辑</button>
+              <button type="button" role="tab" aria-selected={compactMode === "preview"} onClick={() => setCompactMode("preview")}
+                className={`min-h-10 rounded-md px-3 text-sm font-medium ${compactMode === "preview" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}>预览</button>
+            </div>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="min-h-10 shrink-0 gap-1 bg-transparent" aria-label="更多简历操作">
+                  <Icon icon="mdi:dots-horizontal" className="h-4 w-4" />更多
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-h-[85dvh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>更多操作</DialogTitle>
+                  <DialogDescription>新建、载入、导入或导出简历源文件。</DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-2">
+                  <DialogClose asChild><Button variant="outline" className="min-h-11 justify-start" onClick={() => void handleCreateBlankResume()}>新建空白简历</Button></DialogClose>
+                  <DialogClose asChild><Button variant="outline" className="min-h-11 justify-start" onClick={() => void handleLoadDemo()}>加载示例</Button></DialogClose>
+                  <DialogClose asChild><Button variant="outline" className="min-h-11 justify-start" onClick={() => document.getElementById("import-file")?.click()}>导入源文件</Button></DialogClose>
+                  <DialogClose asChild><Button variant="outline" className="min-h-11 justify-start" onClick={handleExport}>导出 .magicyan 源文件</Button></DialogClose>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </div>
         <AccountMenu>
           <CloudResumeControls cloud={cloud} ready={isHydrated} />
           {hasGuestDraft && user && (
@@ -578,11 +623,11 @@ export default function ResumeBuilder({ user }: { user: AccountUser | null }) {
       </header>
 
       <div className="editor-content">
-        {(viewMode === "both" || viewMode === "edit-only") && (
+        {(isCompact ? compactMode === "edit" : viewMode === "both" || viewMode === "edit-only") && (
           <div
             className={`editor-panel ${viewMode === "edit-only" ? "w-full" : ""}`}
           >
-            <div className="space-y-6 p-6">
+            <div className="space-y-6 p-3 sm:p-6">
               <Card className="p-4">
                 <div className="space-y-4">
                   <div className="flex items-center gap-2">
@@ -621,11 +666,15 @@ export default function ResumeBuilder({ user }: { user: AccountUser | null }) {
           </div>
         )}
 
-        {(viewMode === "both" || viewMode === "preview-only") && (
+        {(isCompact ? compactMode === "preview" : viewMode === "both" || viewMode === "preview-only") && (
           <div
             className={`preview-panel ${viewMode === "preview-only" ? "w-full" : ""}`}
           >
-            <HtmlResumePreview resumeData={editorState.resumeData} embedded />
+            {isCompact ? (
+              <ResponsiveResumePreview resumeData={editorState.resumeData} />
+            ) : (
+              <HtmlResumePreview resumeData={editorState.resumeData} embedded />
+            )}
           </div>
         )}
       </div>
