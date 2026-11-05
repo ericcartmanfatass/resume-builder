@@ -90,7 +90,7 @@ export default function ResponsiveResumePreview({
 
       <div
         ref={viewportRef}
-        className="min-h-0 min-w-0 flex-1 overflow-x-auto overflow-y-hidden bg-slate-100"
+        className="min-h-0 min-w-0 flex-1 overflow-auto bg-slate-100"
         role="region"
         aria-label="简历预览区域，可通过上方按钮缩放"
       >
