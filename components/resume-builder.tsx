@@ -530,12 +530,12 @@ export default function ResumeBuilder({ user }: { user: AccountUser | null }) {
               size="sm"
               onClick={() => void handleCloudSave()}
               disabled={cloud.busy || !isHydrated}
-              className="min-h-10 gap-2"
+              className="h-11 w-full gap-2 px-3"
             >
               <Icon icon={cloud.busy ? "mdi:loading" : "mdi:content-save-outline"} className={`h-4 w-4 ${cloud.busy ? "animate-spin" : ""}`} />
               {cloud.busy ? "同步中…" : cloud.active ? "云端同步" : "保存"}
             </Button>
-            <div className="[&>button]:w-full"><PDFExportButton resumeData={editorState.resumeData} size="sm" /></div>
+            <PDFExportButton resumeData={editorState.resumeData} size="sm" className="h-11 w-full gap-2 px-3" />
           </div>
           <div className="flex items-center gap-2">
             <div className="grid min-w-0 flex-1 grid-cols-2 rounded-lg bg-muted p-1" role="tablist" aria-label="编辑与预览">
