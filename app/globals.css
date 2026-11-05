@@ -338,3 +338,90 @@
     text-decoration: underline !important;
   }
 }
+
+/*
+ * Mobile editor shell only. The document stylesheet in lib/export-html.ts
+ * stays untouched, so PDF output and desktop A4 layout are unchanged.
+ */
+.mobile-toolbar-actions {
+  display: none;
+}
+
+@media (max-width: 1023px) {
+  .resume-editor {
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .editor-toolbar {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    padding: 10px 12px;
+    flex-shrink: 0;
+  }
+
+  .toolbar-title {
+    min-width: 0;
+    max-width: 100%;
+    align-self: center;
+  }
+
+  .desktop-toolbar-actions {
+    display: none;
+  }
+
+  .mobile-toolbar-actions {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .mobile-toolbar-actions > .grid > button {
+    width: 100%;
+  }
+
+  .editor-content {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .editor-panel,
+  .preview-panel {
+    flex: 1 1 auto;
+    min-height: 0;
+    min-width: 0;
+    width: 100%;
+    border: 0;
+  }
+
+  .editor-panel {
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .preview-panel {
+    overflow: hidden;
+  }
+
+  .section-header {
+    gap: 8px;
+  }
+
+  .section-header > :first-child {
+    min-width: 0;
+  }
+}
+
+@media (min-width: 1024px) {
+  .mobile-toolbar-actions {
+    display: none;
+  }
+}
