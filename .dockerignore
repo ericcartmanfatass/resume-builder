@@ -1,0 +1,13 @@
+.git
+.github
+node_modules
+.next
+out
+build
+.env*
+!.env.example
+*.log
+Dockerfile*
+!Dockerfile
+docker-compose*
+README.md
