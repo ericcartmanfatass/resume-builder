@@ -623,9 +623,9 @@ export default function ResumeBuilder({ user }: { user: AccountUser | null }) {
       </header>
 
       <div className="editor-content">
-        {(isCompact ? compactMode === "edit" : viewMode === "both" || viewMode === "edit-only") && (
+        {(isCompact || viewMode === "both" || viewMode === "edit-only") && (
           <div
-            className={`editor-panel ${viewMode === "edit-only" ? "w-full" : ""}`}
+            className={`editor-panel ${viewMode === "edit-only" ? "w-full" : ""} ${isCompact && compactMode !== "edit" ? "hidden" : ""}`}
           >
             <div className="space-y-6 p-3 sm:p-6">
               <Card className="p-4">
