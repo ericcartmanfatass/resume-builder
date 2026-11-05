@@ -27,6 +27,7 @@ export default function PersonalInfoEditor({ personalInfo, avatar, avatarShape =
   const [avatarUrl, setAvatarUrl] = useState(avatar || "")
   const [shape, setShape] = useState<AvatarShape>(avatarShape)
   const [cropOpen, setCropOpen] = useState(false)
+  const [cropSize, setCropSize] = useState(CROP_SIZE)
   const [cropSource, setCropSource] = useState("")
   const [imageReady, setImageReady] = useState(false)
   const [imageSize, setImageSize] = useState({ width: 1, height: 1 })
@@ -37,13 +38,20 @@ export default function PersonalInfoEditor({ personalInfo, avatar, avatarShape =
   const fileInputRef = useRef<HTMLInputElement>(null)
   const safeAvatarUrl = sanitizeUrl(avatarUrl, { allowImages: true })
 
+  useEffect(() => {
+    const query = window.matchMedia("(max-width: 379px)");
+    const update = () => setCropSize(query.matches ? 220 : CROP_SIZE);
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
   useEffect(() => setAvatarUrl(avatar || ""), [avatar])
   useEffect(() => setShape(avatarShape), [avatarShape])
 
   const clampOffset = (next: { x: number; y: number }, nextZoom = zoom) => {
-    const baseScale = CROP_SIZE / Math.min(imageSize.width, imageSize.height)
-    const maxX = Math.max(0, (imageSize.width * baseScale * nextZoom - CROP_SIZE) / 2)
-    const maxY = Math.max(0, (imageSize.height * baseScale * nextZoom - CROP_SIZE) / 2)
+    const baseScale = cropSize / Math.min(imageSize.width, imageSize.height)
+    const maxX = Math.max(0, (imageSize.width * baseScale * nextZoom - cropSize) / 2)
+    const maxY = Math.max(0, (imageSize.height * baseScale * nextZoom - cropSize) / 2)
     return { x: Math.max(-maxX, Math.min(maxX, next.x)), y: Math.max(-maxY, Math.min(maxY, next.y)) }
   }
 
@@ -73,10 +81,10 @@ export default function PersonalInfoEditor({ personalInfo, avatar, avatarShape =
     canvas.height = 512
     const context = canvas.getContext("2d")
     if (!context) return
-    const renderedScale = (CROP_SIZE / Math.min(image.naturalWidth, image.naturalHeight)) * zoom
-    const left = (CROP_SIZE - image.naturalWidth * renderedScale) / 2 + offset.x
-    const top = (CROP_SIZE - image.naturalHeight * renderedScale) / 2 + offset.y
-    const sourceSize = CROP_SIZE / renderedScale
+    const renderedScale = (cropSize / Math.min(image.naturalWidth, image.naturalHeight)) * zoom
+    const left = (cropSize - image.naturalWidth * renderedScale) / 2 + offset.x
+    const top = (cropSize - image.naturalHeight * renderedScale) / 2 + offset.y
+    const sourceSize = cropSize / renderedScale
     context.drawImage(image, -left / renderedScale, -top / renderedScale, sourceSize, sourceSize, 0, 0, 512, 512)
     const cropped = canvas.toDataURL("image/jpeg", 0.9)
     setAvatarUrl(cropped)
@@ -125,11 +133,11 @@ export default function PersonalInfoEditor({ personalInfo, avatar, avatarShape =
 
       <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
       <Dialog open={cropOpen} onOpenChange={setCropOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="max-h-[88dvh] overflow-y-auto sm:max-w-md">
           <DialogHeader><DialogTitle>拖动裁剪头像</DialogTitle><DialogDescription>拖动图片调整位置，使用滑块缩放；虚线框内是最终头像范围。</DialogDescription></DialogHeader>
-          <div className="mx-auto overflow-hidden bg-muted touch-none" style={{ width: CROP_SIZE, height: CROP_SIZE }} onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); dragStart.current = { x: event.clientX, y: event.clientY, offsetX: offset.x, offsetY: offset.y } }} onPointerMove={(event) => { if (!dragStart.current) return; setOffset(clampOffset({ x: dragStart.current.offsetX + event.clientX - dragStart.current.x, y: dragStart.current.offsetY + event.clientY - dragStart.current.y })) }} onPointerUp={() => { dragStart.current = null }} onPointerCancel={() => { dragStart.current = null }}>
+          <div className="mx-auto max-w-full overflow-hidden bg-muted touch-none" style={{ width: cropSize, height: cropSize }} onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); dragStart.current = { x: event.clientX, y: event.clientY, offsetX: offset.x, offsetY: offset.y } }} onPointerMove={(event) => { if (!dragStart.current) return; setOffset(clampOffset({ x: dragStart.current.offsetX + event.clientX - dragStart.current.x, y: dragStart.current.offsetY + event.clientY - dragStart.current.y })) }} onPointerUp={() => { dragStart.current = null }} onPointerCancel={() => { dragStart.current = null }}>
             <div className="relative h-full w-full cursor-grab active:cursor-grabbing">
-              {cropSource && <img ref={imageRef} src={cropSource} alt="待裁剪头像" draggable={false} onLoad={(event) => { setImageSize({ width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight }); setImageReady(true) }} className="pointer-events-none absolute left-1/2 top-1/2 max-w-none select-none" style={{ width: imageSize.width * (CROP_SIZE / Math.min(imageSize.width, imageSize.height)), height: imageSize.height * (CROP_SIZE / Math.min(imageSize.width, imageSize.height)), transform: `translate(-50%, -50%) translate(${offset.x}px, ${offset.y}px) scale(${zoom})` }} />}
+              {cropSource && <img ref={imageRef} src={cropSource} alt="待裁剪头像" draggable={false} onLoad={(event) => { setImageSize({ width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight }); setImageReady(true) }} className="pointer-events-none absolute left-1/2 top-1/2 max-w-none select-none" style={{ width: imageSize.width * (cropSize / Math.min(imageSize.width, imageSize.height)), height: imageSize.height * (cropSize / Math.min(imageSize.width, imageSize.height)), transform: `translate(-50%, -50%) translate(${offset.x}px, ${offset.y}px) scale(${zoom})` }} />}
               <div className={`pointer-events-none absolute inset-0 border-2 border-dashed border-white/90 shadow-[0_0_0_999px_rgba(15,23,42,0.38)] ${shape === "circle" ? "rounded-full" : "rounded-md"}`} />
             </div>
           </div>
@@ -154,7 +162,7 @@ function PersonalInfoItemEditor({ item, onUpdate, onRemove }: PersonalInfoItemEd
   const iconBody = sanitizeSvgBody(item.icon)
   return <div className="flex items-start gap-3 rounded-lg border bg-muted/30 p-3">
     <Dialog><DialogTrigger asChild><Button variant="outline" size="sm" className="icon-button bg-transparent">{iconBody && <svg width={24} height={24} viewBox="0 0 24 24" dangerouslySetInnerHTML={{ __html: iconBody }} />}</Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>选择图标</DialogTitle></DialogHeader><IconPicker selectedIcon={item.icon} onSelect={(icon) => onUpdate({ icon })} /></DialogContent></Dialog>
-    <div className="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-2"><div><Label className="text-xs text-muted-foreground">标签</Label><Input value={item.label} onChange={(event) => onUpdate({ label: event.target.value })} placeholder="如：电话、邮箱" className="h-8" /></div><div><Label className="text-xs text-muted-foreground">内容</Label><Input value={item.value} onChange={(event) => onUpdate({ value: event.target.value })} placeholder="请输入对应内容" className="h-8" /></div></div>
+    <div className="grid min-w-0 flex-1 grid-cols-1 gap-3 sm:grid-cols-2"><div><Label className="text-xs text-muted-foreground">标签</Label><Input value={item.label} onChange={(event) => onUpdate({ label: event.target.value })} placeholder="如：电话、邮箱" className="h-8" /></div><div><Label className="text-xs text-muted-foreground">内容</Label><Input value={item.value} onChange={(event) => onUpdate({ value: event.target.value })} placeholder="请输入对应内容" className="h-8" /></div></div>
     <Button variant="ghost" size="sm" onClick={onRemove} className="icon-button text-destructive hover:text-destructive" aria-label="删除信息"><Icon icon="mdi:delete" className="h-4 w-4" /></Button>
   </div>
 }
