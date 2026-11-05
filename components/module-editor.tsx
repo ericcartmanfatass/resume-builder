@@ -128,7 +128,7 @@ export default function ModuleEditor({ modules, onUpdate }: ModuleEditorProps) {
 }
 
 interface ModuleItemEditorProps {
-  dragHandleProps?: DraggableProvided["dragHandleProps"]
+  dragHandleProps: DraggableProvided["dragHandleProps"]
   module: ResumeModule
   isExpanded: boolean
   onToggle: () => void
