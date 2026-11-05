@@ -234,7 +234,9 @@ function ModuleItemEditor({ module, isExpanded, onToggle, onUpdate, onRemove, dr
                     variant={contentMode === "markdown" ? "default" : "ghost"}
                     size="sm"
                     className="h-8"
-                    onClick={() => onUpdate({ contentMode: "markdown" })}
+                    onClick={() => {
+                      if (contentMode !== "markdown") onUpdate({ contentMode: "markdown" })
+                    }}
                   >
                     Markdown
                   </Button>
@@ -243,10 +245,13 @@ function ModuleItemEditor({ module, isExpanded, onToggle, onUpdate, onRemove, dr
                     variant={contentMode === "rich-text" ? "default" : "ghost"}
                     size="sm"
                     className="h-8"
-                    onClick={() => onUpdate({
-                      contentMode: "rich-text",
-                      content: renderModuleContent(module),
-                    })}
+                    onClick={() => {
+                      if (contentMode === "rich-text") return
+                      onUpdate({
+                        contentMode: "rich-text",
+                        content: renderModuleContent(module),
+                      })
+                    }}
                   >
                     富文本
                   </Button>
