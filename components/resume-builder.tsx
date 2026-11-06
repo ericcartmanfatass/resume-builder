@@ -666,7 +666,7 @@ export default function ResumeBuilder({ user }: { user: AccountUser | null }) {
               const bounds = event.currentTarget.getBoundingClientRect();
               const ratio = Math.max(0.08, Math.min(0.88, (element.getBoundingClientRect().top - bounds.top + 16) / Math.max(bounds.height, 1)));
               requestPreviewSection(section, target, ratio, true);
-            }
+            }}
             onScroll={(event) => {
               if (event.target !== event.currentTarget || scrollFrameRef.current !== null) return;
               const panel = event.currentTarget;
