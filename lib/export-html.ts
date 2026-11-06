@@ -40,7 +40,7 @@ export function buildResumeHtml(resumeData: ResumeData, { embedded = false }: { 
         : ""
 
       return `
-        <section class="resume-module">
+        <section class="resume-module" data-resume-module-id="${escapeHtml(module.id)}">
           ${
             module.title
               ? `
@@ -152,10 +152,11 @@ export function buildResumeHtml(resumeData: ResumeData, { embedded = false }: { 
           .personal-info-item {
             display: grid;
             grid-template-columns: max-content minmax(0, 1fr);
-            align-items: start;
+            align-items: baseline;
             column-gap: 6px;
             min-width: 0;
             font-size: 14px;
+            line-height: 1.7;
           }
 
           .personal-info-item--with-icon {
@@ -178,7 +179,7 @@ export function buildResumeHtml(resumeData: ResumeData, { embedded = false }: { 
 
           .resume-icon {
             flex-shrink: 0;
-            margin-top: 2px;
+            align-self: center;
           }
 
           .avatar {
