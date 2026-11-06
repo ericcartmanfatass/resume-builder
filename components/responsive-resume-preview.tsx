@@ -49,9 +49,8 @@ export default function ResponsiveResumePreview({
 
   const fitScale = viewport.width > 0 ? Math.min(1, viewport.width / A4_WIDTH) : 1;
   const scale = fitScale * zoom;
-  // A sandboxed srcDoc has an opaque origin. Do NOT access its document to
-  // calculate height or weaken sandbox permissions just to read scrollHeight.
-  // Give it its own scrollable viewport for resumes longer than a page.
+  // The A4 iframe preserves its own scroll for long resumes. The compact
+  // viewport also scrolls to the matching edit section when it changes.
   const frameHeight = Math.max(A4_HEIGHT, viewport.height > 0 ? viewport.height / scale : 0);
   const scaledWidth = A4_WIDTH * scale;
   const scaledHeight = frameHeight * scale;
