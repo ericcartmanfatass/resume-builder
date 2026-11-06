@@ -246,7 +246,7 @@ docker-compose.yml            1Panel 网络与应用容器配置
 
 ## 🙏 致谢
 
-- **[magicyan418/resume-builder](https://github.com/magicyan418/resume-builder)**：感谢原作者 [@magicyan418](https://github.com/magicyan418) 及原项目贡献者提供最初的简历生成器、设计思路和开源基础。本仓库保留 Fork 关系，并在其基础上持续改进。
+- **[magicyan418/resume-builder](https://github.com/magicyan418/resume-builder)**：感谢原作者 **magicyan418** 及原项目贡献者提供最初的简历生成器、设计思路和开源基础。本仓库保留 Fork 关系，并在其基础上持续改进。
 - **开源生态与社区：** 感谢 Next.js、React、Tailwind CSS、Radix UI、Logto、Puppeteer、Chromium、PostgreSQL 及相关项目的维护者。具体依赖与版本以 [package.json](./package.json) 为准。
 - **反馈与测试：** 感谢使用者提出编辑体验、移动端交互和导出流程中的实际问题，帮助持续完善本定制版。
 
