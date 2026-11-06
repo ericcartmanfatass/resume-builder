@@ -111,7 +111,7 @@ export default function PersonalInfoEditor({ personalInfo, avatar, avatarShape =
         <div className="form-group">
           <Label className="form-label">头像</Label>
           <div className="flex items-center gap-4 rounded-xl bg-muted/40 p-3">
-            <button type="button" className={`flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden bg-muted transition-opacity hover:opacity-85 ${avatarShape === "circle" ? "rounded-full" : "rounded-md"}`} onClick={() => safeAvatarUrl ? openCropper(safeAvatarUrl) : fileInputRef.current?.click()} aria-label={safeAvatarUrl ? "编辑头像" : "上传头像"}>
+            <button type="button" data-edit-field="avatar" className={`flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden bg-muted transition-opacity hover:opacity-85 ${avatarShape === "circle" ? "rounded-full" : "rounded-md"}`} onClick={() => safeAvatarUrl ? openCropper(safeAvatarUrl) : fileInputRef.current?.click()} aria-label={safeAvatarUrl ? "编辑头像" : "上传头像"}>
               {safeAvatarUrl ? <img src={safeAvatarUrl} alt="头像预览" className="h-full w-full object-cover" /> : <Icon icon="mdi:account" className="h-9 w-9 text-muted-foreground" />}
             </button>
             <div className="min-w-0 flex-1">
@@ -163,7 +163,7 @@ function PersonalInfoItemEditor({ item, onUpdate, onRemove }: PersonalInfoItemEd
   return <div className="flex items-center gap-3 rounded-lg border bg-muted/30 p-3">
     <Dialog>
       <DialogTrigger asChild>
-        <Button type="button" variant="outline" size="icon" className="size-10 shrink-0 self-center bg-transparent" aria-label={`选择${item.label || "个人信息"}图标`}>
+        <Button type="button" data-edit-field={`personal:${item.id}`} variant="outline" size="icon" className="size-10 shrink-0 self-center bg-transparent" aria-label={`选择${item.label || "个人信息"}图标`}>
           {iconBody
             ? <svg width={20} height={20} viewBox="0 0 24 24" dangerouslySetInnerHTML={{ __html: iconBody }} />
             : <Icon icon="mdi:image-plus-outline" className="size-4 text-muted-foreground" />}
@@ -175,8 +175,8 @@ function PersonalInfoItemEditor({ item, onUpdate, onRemove }: PersonalInfoItemEd
       </DialogContent>
     </Dialog>
     <div className="grid min-w-0 flex-1 grid-cols-1 gap-3 sm:grid-cols-2">
-      <div className="min-w-0"><Label className="text-xs text-muted-foreground">标签</Label><Input value={item.label} onChange={(event) => onUpdate({ label: event.target.value })} placeholder="如：电话、邮箱" className="h-8" /></div>
-      <div className="min-w-0"><Label className="text-xs text-muted-foreground">内容</Label><Input value={item.value} onChange={(event) => onUpdate({ value: event.target.value })} placeholder="请输入对应内容" className="h-8" /></div>
+      <div className="min-w-0"><Label className="text-xs text-muted-foreground">标签</Label><Input data-edit-field={`personal:${item.id}:label`} value={item.label} onChange={(event) => onUpdate({ label: event.target.value })} placeholder="如：电话、邮箱" className="h-8" /></div>
+      <div className="min-w-0"><Label className="text-xs text-muted-foreground">内容</Label><Input data-edit-field={`personal:${item.id}:value`} value={item.value} onChange={(event) => onUpdate({ value: event.target.value })} placeholder="请输入对应内容" className="h-8" /></div>
     </div>
     <Button type="button" variant="ghost" size="icon" onClick={onRemove} className="size-10 shrink-0 self-center text-destructive hover:text-destructive" aria-label="删除信息"><Icon icon="mdi:delete" className="size-4" /></Button>
   </div>
