@@ -32,6 +32,53 @@ export default function RichTextEditor({ value, onChange, placeholder }: RichTex
     if (editor.innerHTML !== safe) editor.innerHTML = safe
   }, [value])
 
+  // Keep the caret reachable when the virtual keyboard reduces the visual viewport.
+  useEffect(() => {
+    const editor = editorRef.current
+    const viewport = window.visualViewport
+    if (!editor || !viewport) return
+    let frame = 0
+
+    const ensureCaretVisible = () => {
+      if (document.activeElement !== editor || !window.matchMedia("(max-width: 1023px)").matches) return
+      cancelAnimationFrame(frame)
+      frame = requestAnimationFrame(() => {
+        const selection = window.getSelection()
+        if (!selection?.rangeCount || !editor.contains(selection.anchorNode)) return
+        const caret = selection.getRangeAt(0).cloneRange()
+        caret.collapse(false)
+        const rect = caret.getBoundingClientRect()
+        if (!rect.height) return
+        const visibleBottom = viewport.offsetTop + viewport.height - 20
+        if (rect.bottom > visibleBottom) {
+          const panel = editor.closest<HTMLElement>(".editor-panel")
+          if (panel) panel.scrollTop += rect.bottom - visibleBottom + 20
+        }
+      })
+    }
+
+    const focus = () => {
+      viewport.addEventListener("resize", ensureCaretVisible)
+      viewport.addEventListener("scroll", ensureCaretVisible)
+      editor.addEventListener("input", ensureCaretVisible)
+      ensureCaretVisible()
+    }
+    const blur = () => {
+      viewport.removeEventListener("resize", ensureCaretVisible)
+      viewport.removeEventListener("scroll", ensureCaretVisible)
+      editor.removeEventListener("input", ensureCaretVisible)
+      cancelAnimationFrame(frame)
+    }
+
+    editor.addEventListener("focus", focus)
+    editor.addEventListener("blur", blur)
+    return () => {
+      editor.removeEventListener("focus", focus)
+      editor.removeEventListener("blur", blur)
+      blur()
+    }
+  }, [])
+
   const runCommand = (command: string, commandValue?: string) => {
     const editor = editorRef.current
     if (!editor) {
