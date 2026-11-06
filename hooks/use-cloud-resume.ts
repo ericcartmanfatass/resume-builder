@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import type { AccountUser, CloudResume, CloudResumeSummary } from "@/types/account"
 import type { ResumeData } from "@/types/resume"
 import { apiRequest } from "@/lib/api-client"
-import { exportToMagicyanFile } from "@/lib/resume-utils"
+import { exportResumeSourceFile } from "@/lib/resume-utils"
 
 export function useCloudResume(user: AccountUser | null, data: ResumeData, ready: boolean, draftKey: string, onLoad: (data: ResumeData) => void) {
   const userId = user?.id
@@ -22,7 +22,7 @@ export function useCloudResume(user: AccountUser | null, data: ResumeData, ready
   const metadataKey = `${draftKey}:cloud`
 
   const writeLocalDraft = useCallback((snapshot: ResumeData = current.current, link = activeRef.current) => {
-    const file = JSON.parse(exportToMagicyanFile(snapshot))
+    const file = JSON.parse(exportResumeSourceFile(snapshot))
     // Data and its cloud version must be one atomic localStorage write. Separate keys
     // can mix two documents when multiple tabs save simultaneously.
     if (link) file.metadata.cloud = { id: link.id, version: link.version }
