@@ -348,6 +348,26 @@
 }
 
 @media (max-width: 1023px) {
+  /*
+   * Only the editor panel should scroll on compact screens. If the document
+   * itself remains scrollable, Android's focus/keyboard auto-scroll can move
+   * the whole 100dvh app above the visual viewport, leaving a persistent
+   * blank area after the keyboard closes.
+   */
+  html,
+  body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  body > main {
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
   .resume-editor {
     height: 100dvh;
     min-height: 0;
