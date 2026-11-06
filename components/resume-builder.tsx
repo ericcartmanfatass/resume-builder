@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { memo, useCallback, useEffect, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { Icon } from "@iconify/react";
 import HtmlResumePreview from "@/components/html-resume-preview";
 import ResponsiveResumePreview from "@/components/responsive-resume-preview";
@@ -98,7 +98,17 @@ export default function ResumeBuilder({ user }: { user: AccountUser | null }) {
   });
   const [viewMode, setViewMode] = useState<ViewMode>("both");
   const [compactMode, setCompactMode] = useState<"edit" | "preview">("edit");
-  const [activePreviewSection, setActivePreviewSection] = useState<string | null>(null);
+  const [previewNavigation, setPreviewNavigation] = useState<{ section: string; request: number } | null>(null);
+  const activePreviewSectionRef = useRef<string | null>(null);
+  const scrollFrameRef = useRef<number | null>(null);
+  const requestPreviewSection = useCallback((section: string, repeat = false) => {
+    if (!repeat && activePreviewSectionRef.current === section) return;
+    activePreviewSectionRef.current = section;
+    setPreviewNavigation((previous) => ({ section, request: (previous?.request ?? 0) + 1 }));
+  }, []);
+  useEffect(() => () => {
+    if (scrollFrameRef.current !== null) cancelAnimationFrame(scrollFrameRef.current);
+  }, []);
   const isCompact = useCompactLayout();
   const [isHydrated, setIsHydrated] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
@@ -630,11 +640,25 @@ export default function ResumeBuilder({ user }: { user: AccountUser | null }) {
             className={`editor-panel ${viewMode === "edit-only" ? "w-full" : ""} ${isCompact && compactMode !== "edit" ? "hidden" : ""}`}
             onFocusCapture={(event) => {
               const section = (event.target as HTMLElement).closest<HTMLElement>("[data-edit-section]")?.dataset.editSection;
-              if (section) setActivePreviewSection((current) => current === section ? current : section);
+              if (section) requestPreviewSection(section);
             }}
             onClickCapture={(event) => {
               const section = (event.target as HTMLElement).closest<HTMLElement>("[data-edit-section]")?.dataset.editSection;
-              if (section) setActivePreviewSection((current) => current === section ? current : section);
+              if (section) requestPreviewSection(section, true);
+            }}
+            onScroll={(event) => {
+              if (event.target !== event.currentTarget || scrollFrameRef.current !== null) return;
+              const panel = event.currentTarget;
+              scrollFrameRef.current = requestAnimationFrame(() => {
+                scrollFrameRef.current = null;
+                const anchor = panel.getBoundingClientRect().top + Math.min(120, panel.clientHeight * 0.25);
+                const sections = Array.from(panel.querySelectorAll<HTMLElement>("[data-edit-section]"));
+                const active = sections.find((section) => {
+                  const rect = section.getBoundingClientRect();
+                  return rect.top <= anchor && rect.bottom > anchor;
+                }) ?? sections.find((section) => section.getBoundingClientRect().top > anchor);
+                if (active?.dataset.editSection) requestPreviewSection(active.dataset.editSection);
+              });
             }}
           >
             <div className="space-y-6 p-3 sm:p-6">
@@ -683,9 +707,9 @@ export default function ResumeBuilder({ user }: { user: AccountUser | null }) {
             className={`preview-panel ${viewMode === "preview-only" ? "w-full" : ""}`}
           >
             {isCompact ? (
-              <ResponsiveResumePreview resumeData={editorState.resumeData} activeSection={activePreviewSection} />
+              <ResponsiveResumePreview resumeData={editorState.resumeData} navigation={previewNavigation} />
             ) : (
-              <HtmlResumePreview resumeData={editorState.resumeData} embedded activeSection={activePreviewSection} />
+              <HtmlResumePreview resumeData={editorState.resumeData} embedded navigation={previewNavigation} />
             )}
           </div>
         )}
