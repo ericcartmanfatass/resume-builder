@@ -3,7 +3,7 @@
 import type React from "react";
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { Icon } from "@iconify/react";
-import HtmlResumePreview from "@/components/html-resume-preview";
+import HtmlResumePreview, { type PreviewNavigation } from "@/components/html-resume-preview";
 import ResponsiveResumePreview from "@/components/responsive-resume-preview";
 import { useCompactLayout } from "@/hooks/use-compact-layout";
 import ModuleEditor from "@/components/module-editor";
@@ -98,13 +98,24 @@ export default function ResumeBuilder({ user }: { user: AccountUser | null }) {
   });
   const [viewMode, setViewMode] = useState<ViewMode>("both");
   const [compactMode, setCompactMode] = useState<"edit" | "preview">("edit");
-  const [previewNavigation, setPreviewNavigation] = useState<{ section: string; request: number } | null>(null);
+  const [previewNavigation, setPreviewNavigation] = useState<PreviewNavigation | null>(null);
   const activePreviewSectionRef = useRef<string | null>(null);
   const scrollFrameRef = useRef<number | null>(null);
-  const requestPreviewSection = useCallback((section: string, repeat = false) => {
-    if (!repeat && activePreviewSectionRef.current === section) return;
-    activePreviewSectionRef.current = section;
-    setPreviewNavigation((previous) => ({ section, request: (previous?.request ?? 0) + 1 }));
+  const requestPreviewSection = useCallback((
+    section: string,
+    target?: string,
+    alignRatio = 0.22,
+    repeat = false,
+  ) => {
+    const key = section + "|" + (target ?? "");
+    if (!repeat && activePreviewSectionRef.current === key) return;
+    activePreviewSectionRef.current = key;
+    setPreviewNavigation((previous) => ({
+      section,
+      target,
+      alignRatio,
+      request: (previous?.request ?? 0) + 1,
+    }));
   }, []);
   useEffect(() => () => {
     if (scrollFrameRef.current !== null) cancelAnimationFrame(scrollFrameRef.current);
@@ -639,13 +650,23 @@ export default function ResumeBuilder({ user }: { user: AccountUser | null }) {
           <div
             className={`editor-panel ${viewMode === "edit-only" ? "w-full" : ""} ${isCompact && compactMode !== "edit" ? "hidden" : ""}`}
             onFocusCapture={(event) => {
-              const section = (event.target as HTMLElement).closest<HTMLElement>("[data-edit-section]")?.dataset.editSection;
-              if (section) requestPreviewSection(section);
+              const element = event.target as HTMLElement;
+              const section = element.closest<HTMLElement>("[data-edit-section]")?.dataset.editSection;
+              if (!section) return;
+              const target = element.closest<HTMLElement>("[data-edit-field]")?.dataset.editField;
+              const bounds = event.currentTarget.getBoundingClientRect();
+              const ratio = Math.max(0.08, Math.min(0.88, (element.getBoundingClientRect().top - bounds.top + 16) / Math.max(bounds.height, 1)));
+              requestPreviewSection(section, target, ratio);
             }}
             onClickCapture={(event) => {
-              const section = (event.target as HTMLElement).closest<HTMLElement>("[data-edit-section]")?.dataset.editSection;
-              if (section) requestPreviewSection(section, true);
-            }}
+              const element = event.target as HTMLElement;
+              const section = element.closest<HTMLElement>("[data-edit-section]")?.dataset.editSection;
+              if (!section) return;
+              const target = element.closest<HTMLElement>("[data-edit-field]")?.dataset.editField;
+              const bounds = event.currentTarget.getBoundingClientRect();
+              const ratio = Math.max(0.08, Math.min(0.88, (element.getBoundingClientRect().top - bounds.top + 16) / Math.max(bounds.height, 1)));
+              requestPreviewSection(section, target, ratio, true);
+            }
             onScroll={(event) => {
               if (event.target !== event.currentTarget || scrollFrameRef.current !== null) return;
               const panel = event.currentTarget;
@@ -657,7 +678,7 @@ export default function ResumeBuilder({ user }: { user: AccountUser | null }) {
                   const rect = section.getBoundingClientRect();
                   return rect.top <= anchor && rect.bottom > anchor;
                 }) ?? sections.find((section) => section.getBoundingClientRect().top > anchor);
-                if (active?.dataset.editSection) requestPreviewSection(active.dataset.editSection);
+                if (active?.dataset.editSection && !activePreviewSectionRef.current?.startsWith(active.dataset.editSection + "|")) requestPreviewSection(active.dataset.editSection);
               });
             }}
           >
@@ -672,6 +693,7 @@ export default function ResumeBuilder({ user }: { user: AccountUser | null }) {
                     <h2 className="font-medium">简历标题</h2>
                   </div>
                   <Input
+                    data-edit-field="title"
                     value={editorState.resumeData.title}
                     onChange={(event) =>
                       updateResumeData({ title: event.target.value })
@@ -707,9 +729,9 @@ export default function ResumeBuilder({ user }: { user: AccountUser | null }) {
             className={`preview-panel ${viewMode === "preview-only" ? "w-full" : ""}`}
           >
             {isCompact ? (
-              <ResponsiveResumePreview resumeData={editorState.resumeData} navigation={previewNavigation} />
+              <ResponsiveResumePreview resumeData={editorState.resumeData} navigation={previewNavigation} editorGuides />
             ) : (
-              <HtmlResumePreview resumeData={editorState.resumeData} embedded navigation={previewNavigation} />
+              <HtmlResumePreview resumeData={editorState.resumeData} embedded navigation={previewNavigation} editorGuides />
             )}
           </div>
         )}
