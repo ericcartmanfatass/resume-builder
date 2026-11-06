@@ -9,7 +9,7 @@ interface HtmlResumePreviewProps {
   className?: string
   embedded?: boolean
   style?: CSSProperties
-  activeSection?: string | null
+  navigation?: { section: string; request: number } | null
   onSectionPosition?: (position: number) => void
 }
 
@@ -69,17 +69,17 @@ export default function HtmlResumePreview({
   className,
   embedded = false,
   style,
-  activeSection,
+  navigation,
   onSectionPosition,
 }: HtmlResumePreviewProps) {
   const html = useMemo(() => buildResumeHtml(resumeData, { embedded }), [resumeData, embedded])
   const initialHtmlRef = useRef(html)
   const latestHtmlRef = useRef(html)
   const frameRef = useRef<HTMLIFrameElement>(null)
-  const sectionRef = useRef(activeSection)
+  const navigationRef = useRef(navigation)
   const positionRef = useRef(onSectionPosition)
   latestHtmlRef.current = html
-  sectionRef.current = activeSection
+  navigationRef.current = navigation
   positionRef.current = onSectionPosition
 
   const updateFrame = useCallback(() => {
@@ -88,27 +88,33 @@ export default function HtmlResumePreview({
   }, [])
 
   const followSection = useCallback(() => {
-    const section = sectionRef.current
+    const request = navigationRef.current
     const frame = frameRef.current
     const doc = frame?.contentDocument
-    const innerWindow = frame?.contentWindow
-    if (!section || !frame || !doc || !innerWindow) return
+    if (!request || !frame || !doc) return
 
-    const destination = section === "header"
+    const destination = request.section === "header"
       ? doc.querySelector(".resume-header")
       : Array.from(doc.querySelectorAll("[data-resume-module-id]")).find(
-          (element) => element.getAttribute("data-resume-module-id") === section,
+          (element) => element.getAttribute("data-resume-module-id") === request.section,
         )
     if (!destination) return
 
-    const top = destination.getBoundingClientRect().top + innerWindow.scrollY
-    const contentHeight = Math.max(doc.body?.scrollHeight || 0, doc.documentElement.scrollHeight)
-    const maxScroll = Math.max(0, contentHeight - frame.clientHeight)
-    const scrollTop = Math.min(Math.max(0, top - 24), maxScroll)
+    const scroller = doc.scrollingElement ?? doc.documentElement
+    const top = destination.getBoundingClientRect().top + scroller.scrollTop
+    const visibleHeight = doc.documentElement.clientHeight || frame.clientHeight
+    const contentHeight = Math.max(doc.body?.scrollHeight || 0, scroller.scrollHeight)
+    const maxScroll = Math.max(0, contentHeight - visibleHeight)
 
-    innerWindow.scrollTo({ top: scrollTop, behavior: "auto" })
-    // In the scaled phone preview, the outer viewport may also need to scroll.
-    positionRef.current?.(Math.max(0, top - scrollTop - 24))
+    // Desktop scrolls inside the iframe. Compact previews scroll their scaled
+    // outer viewport first, only moving the inner document for long resumes.
+    const hasOuterScroller = Boolean(positionRef.current)
+    const innerTarget = hasOuterScroller
+      ? Math.max(0, top - visibleHeight * 0.8)
+      : Math.max(0, top - 28)
+    const scrollTop = Math.min(innerTarget, maxScroll)
+    scroller.scrollTo({ top: scrollTop, behavior: hasOuterScroller ? "auto" : "smooth" })
+    positionRef.current?.(Math.max(0, top - scrollTop))
   }, [])
 
   useEffect(() => {
@@ -119,7 +125,7 @@ export default function HtmlResumePreview({
   useEffect(() => {
     const frame = requestAnimationFrame(followSection)
     return () => cancelAnimationFrame(frame)
-  }, [activeSection, followSection])
+  }, [navigation?.request, followSection])
 
   return (
     <iframe
