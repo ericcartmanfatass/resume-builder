@@ -20,10 +20,10 @@ export function buildResumeHtml(resumeData: ResumeData, { embedded = false }: { 
         : ""
 
       return `
-        <div class="personal-info-item ${iconBody ? "personal-info-item--with-icon" : "personal-info-item--no-icon"}">
+        <div class="personal-info-item ${iconBody ? "personal-info-item--with-icon" : "personal-info-item--no-icon"}" data-preview-field="personal:${escapeHtml(item.id)}">
           ${iconHtml}
-          <span class="personal-info-label">${escapeHtml(item.label)}:</span>
-          <span class="personal-info-value">${escapeHtml(
+          <span class="personal-info-label" data-preview-field="personal:${escapeHtml(item.id)}:label">${escapeHtml(item.label)}:</span>
+          <span class="personal-info-value" data-preview-field="personal:${escapeHtml(item.id)}:value">${escapeHtml(
             formatPersonalInfoDisplay(item.label, item.value || "未填写"),
           )}</span>
         </div>
@@ -40,13 +40,13 @@ export function buildResumeHtml(resumeData: ResumeData, { embedded = false }: { 
         : ""
 
       return `
-        <section class="resume-module" data-resume-module-id="${escapeHtml(module.id)}">
+        <section class="resume-module" data-resume-module-id="${escapeHtml(module.id)}" data-preview-field="module:${escapeHtml(module.id)}">
           ${
             module.title
               ? `
                 <div class="module-title">
                   ${iconHtml}
-                  <span>${escapeHtml(module.title)}</span>
+                  <span data-preview-field="module:${escapeHtml(module.id)}:title">${escapeHtml(module.title)}</span>
                 </div>
               `
               : ""
@@ -56,13 +56,13 @@ export function buildResumeHtml(resumeData: ResumeData, { embedded = false }: { 
               module.subtitle || module.timeRange
                 ? `
                   <div class="module-meta">
-                    ${module.subtitle ? `<h3>${escapeHtml(module.subtitle)}</h3>` : "<span></span>"}
-                    ${module.timeRange ? `<span class="module-time">${escapeHtml(module.timeRange)}</span>` : ""}
+                    ${module.subtitle ? `<h3 data-preview-field="module:${escapeHtml(module.id)}:subtitle">${escapeHtml(module.subtitle)}</h3>` : "<span></span>"}
+                    ${module.timeRange ? `<span class="module-time" data-preview-field="module:${escapeHtml(module.id)}:timeRange">${escapeHtml(module.timeRange)}</span>` : ""}
                   </div>
                 `
                 : ""
             }
-            <div class="module-content">
+            <div class="module-content" data-preview-field="module:${escapeHtml(module.id)}:content">
               ${renderModuleContent(module)}
             </div>
           </div>
@@ -361,12 +361,12 @@ export function buildResumeHtml(resumeData: ResumeData, { embedded = false }: { 
         <main class="page">
           <header class="resume-header">
             <div class="header-content">
-              <h1 class="resume-title ${titleSizeClass}">${escapeHtml(resumeData.title || "简历标题")}</h1>
+              <h1 class="resume-title ${titleSizeClass}" data-preview-field="title">${escapeHtml(resumeData.title || "简历标题")}</h1>
               <div class="personal-info">
                 ${personalInfoHtml}
               </div>
             </div>
-            ${safeAvatar ? `<img src="${escapeHtml(safeAvatar)}" alt="头像" class="avatar ${avatarShapeClass}" />` : ""}
+            ${safeAvatar ? `<img src="${escapeHtml(safeAvatar)}" alt="头像" class="avatar ${avatarShapeClass}" data-preview-field="avatar" />` : ""}
           </header>
           ${modulesHtml}
           ${
