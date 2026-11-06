@@ -177,6 +177,7 @@ function ModuleItemEditor({ module, isExpanded, onToggle, onUpdate, onRemove, dr
               <div className="form-group">
                 <Label className="form-label">大标题</Label>
                 <Input
+                  data-edit-field={`module:${module.id}:title`}
                   value={module.title}
                   onChange={(event) => onUpdate({ title: event.target.value })}
                   placeholder="例如：工作经历、项目经历"
@@ -186,7 +187,7 @@ function ModuleItemEditor({ module, isExpanded, onToggle, onUpdate, onRemove, dr
                 <Label className="form-label">图标</Label>
                 <Dialog>
                   <DialogTrigger asChild>
-                    <Button variant="outline" className="w-full justify-start gap-2 bg-transparent">
+                    <Button variant="outline" data-edit-field={`module:${module.id}:title`} className="w-full justify-start gap-2 bg-transparent">
                       {iconBody ? (
                         <svg width={16} height={16} viewBox="0 0 24 24" dangerouslySetInnerHTML={{ __html: iconBody }} />
                       ) : (
@@ -211,6 +212,7 @@ function ModuleItemEditor({ module, isExpanded, onToggle, onUpdate, onRemove, dr
               <div className="form-group">
                 <Label className="form-label">副标题</Label>
                 <Input
+                  data-edit-field={`module:${module.id}:subtitle`}
                   value={module.subtitle || ""}
                   onChange={(event) => onUpdate({ subtitle: event.target.value })}
                   placeholder="例如：公司名称、学校名称"
@@ -219,6 +221,7 @@ function ModuleItemEditor({ module, isExpanded, onToggle, onUpdate, onRemove, dr
               <div className="form-group">
                 <Label className="form-label">时间范围</Label>
                 <Input
+                  data-edit-field={`module:${module.id}:timeRange`}
                   value={module.timeRange || ""}
                   onChange={(event) => onUpdate({ timeRange: event.target.value })}
                   placeholder="例如：2020.01 - 2023.12"
@@ -226,7 +229,7 @@ function ModuleItemEditor({ module, isExpanded, onToggle, onUpdate, onRemove, dr
               </div>
             </div>
 
-            <div className="form-group space-y-3">
+            <div className="form-group space-y-3" data-edit-field={`module:${module.id}:content`}>
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <Label className="form-label">详细内容</Label>
                 <div className="inline-flex rounded-md border bg-background p-1">
