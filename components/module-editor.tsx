@@ -94,6 +94,7 @@ export default function ModuleEditor({ modules, onUpdate }: ModuleEditorProps) {
                       <div
                         ref={draggableProvided.innerRef}
                         {...draggableProvided.draggableProps}
+                        data-edit-section={module.id}
                         style={{
                           ...draggableProvided.draggableProps.style,
                           opacity: snapshot.isDragging ? 0.82 : 1,
