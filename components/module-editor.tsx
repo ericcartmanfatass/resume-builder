@@ -33,6 +33,9 @@ export default function ModuleEditor({ modules, onUpdate }: ModuleEditorProps) {
     setExpandedModules((prev) => new Set([...prev, newModule.id]))
   }
 
+  // All modules are controlled by this set; collapsing them is a UI-only change.
+  const collapseAllModules = () => setExpandedModules(new Set<string>())
+
   const updateModule = (id: string, updates: Partial<ResumeModule>) => {
     onUpdate(modules.map((module) => (module.id === id ? { ...module, ...updates } : module)))
   }
@@ -71,15 +74,29 @@ export default function ModuleEditor({ modules, onUpdate }: ModuleEditorProps) {
 
   return (
     <Card className="section-card">
-      <div className="section-header">
+      <div className="section-header flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <Icon icon="mdi:view-module" className="h-5 w-5 text-primary" />
           <h2 className="section-title">简历模块</h2>
         </div>
-        <Button size="sm" variant="outline" onClick={addModule} className="gap-2 bg-transparent">
-          <Icon icon="mdi:plus" className="h-4 w-4" />
-          添加模块
-        </Button>
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={collapseAllModules}
+            disabled={expandedModules.size === 0}
+            className="gap-1.5 bg-transparent"
+            aria-label="收起全部已展开的简历模块"
+          >
+            <Icon icon="mdi:chevron-double-up" className="h-4 w-4" />
+            全部收起
+          </Button>
+          <Button type="button" size="sm" variant="outline" onClick={addModule} className="gap-2 bg-transparent">
+            <Icon icon="mdi:plus" className="h-4 w-4" />
+            添加模块
+          </Button>
+        </div>
       </div>
 
       <DragDropContext onDragEnd={handleDragEnd}>
