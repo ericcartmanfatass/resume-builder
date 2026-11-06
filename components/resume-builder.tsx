@@ -27,8 +27,8 @@ import { useToast } from "@/hooks/use-toast";
 import {
   createBlankResumeData,
   downloadFile,
-  exportToMagicyanFile,
-  importFromMagicyanFile,
+  exportResumeSourceFile,
+  importResumeSourceFile,
 } from "@/lib/resume-utils";
 import type { EditorState, ResumeData } from "@/types/resume";
 import type { AccountUser } from "@/types/account";
@@ -40,6 +40,7 @@ import { useCloudResume } from "@/hooks/use-cloud-resume";
 type ViewMode = "both" | "edit-only" | "preview-only";
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
+// Keep the historical localStorage key so existing browser drafts are not lost.
 const LOCAL_RESUME_KEY = "magicyan-resume-draft";
 
 const ViewModeSelector = memo(function ViewModeSelector({
@@ -114,13 +115,13 @@ export default function ResumeBuilder({ user }: { user: AccountUser | null }) {
   );
 
   const loadDemoData = useCallback(async () => {
-    const response = await fetch("/demo.magicyan");
+    const response = await fetch("/demo.jianli");
     if (!response.ok) {
       throw new Error("Failed to load demo data");
     }
 
     const content = await response.text();
-    return importFromMagicyanFile(content);
+    return importResumeSourceFile(content);
   }, []);
 
   useEffect(() => {
@@ -135,7 +136,7 @@ export default function ResumeBuilder({ user }: { user: AccountUser | null }) {
         if (savedDraft) {
           setEditorState((prev) => ({
             ...prev,
-            resumeData: importFromMagicyanFile(savedDraft),
+            resumeData: importResumeSourceFile(savedDraft),
           }));
           setIsHydrated(true);
           return;
@@ -267,8 +268,8 @@ export default function ResumeBuilder({ user }: { user: AccountUser | null }) {
 
   const handleExport = () => {
     try {
-      const fileContent = exportToMagicyanFile(editorState.resumeData);
-      const filename = `${editorState.resumeData.title.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, "_")}.magicyan`;
+      const fileContent = exportResumeSourceFile(editorState.resumeData);
+      const filename = `${editorState.resumeData.title.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, "_")}.jianli`;
       downloadFile(fileContent, filename);
 
       toast({
@@ -291,10 +292,10 @@ export default function ResumeBuilder({ user }: { user: AccountUser | null }) {
       return;
     }
 
-    if (!file.name.endsWith(".magicyan")) {
+    if (!/\.(jianli|json|magicyan)$/i.test(file.name)) {
       toast({
         title: "文件格式错误",
-        description: "请选择 .magicyan 格式文件。",
+        description: "支持 .jianli、.json，以及旧版 .magicyan 简历源文件。",
         variant: "destructive",
       });
       event.target.value = "";
@@ -315,7 +316,7 @@ export default function ResumeBuilder({ user }: { user: AccountUser | null }) {
     reader.onload = async (loadEvent) => {
       try {
         const content = loadEvent.target?.result as string;
-        const importedData = importFromMagicyanFile(content);
+        const importedData = importResumeSourceFile(content);
         await cloud.detach();
 
         setEditorState((prev) => ({
@@ -419,7 +420,7 @@ export default function ResumeBuilder({ user }: { user: AccountUser | null }) {
 
           <input
             type="file"
-            accept=".magicyan"
+            accept=".jianli,.json,.magicyan"
             onChange={handleImport}
             className="hidden"
             id="import-file"
@@ -559,7 +560,7 @@ export default function ResumeBuilder({ user }: { user: AccountUser | null }) {
                   <DialogClose asChild><Button variant="outline" className="min-h-11 justify-start" onClick={() => void handleCreateBlankResume()}>新建空白简历</Button></DialogClose>
                   <DialogClose asChild><Button variant="outline" className="min-h-11 justify-start" onClick={() => void handleLoadDemo()}>加载示例</Button></DialogClose>
                   <DialogClose asChild><Button variant="outline" className="min-h-11 justify-start" onClick={() => document.getElementById("import-file")?.click()}>导入源文件</Button></DialogClose>
-                  <DialogClose asChild><Button variant="outline" className="min-h-11 justify-start" onClick={handleExport}>导出 .magicyan 源文件</Button></DialogClose>
+                  <DialogClose asChild><Button variant="outline" className="min-h-11 justify-start" onClick={handleExport}>导出 .jianli 源文件</Button></DialogClose>
                 </div>
               </DialogContent>
             </Dialog>
@@ -585,7 +586,7 @@ export default function ResumeBuilder({ user }: { user: AccountUser | null }) {
                     try {
                       const raw = localStorage.getItem(LOCAL_RESUME_KEY);
                       if (!raw) return;
-                      const imported = importFromMagicyanFile(raw);
+                      const imported = importResumeSourceFile(raw);
                       await cloud.detach();
                       loadCloudData(imported);
                       localStorage.setItem(`${localKey}:guest-dismissed`, "1");

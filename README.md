@@ -9,7 +9,7 @@
 - 模块内容支持 `Markdown` 和 `富文本` 两种模式切换
 - 预览与导出共用同一份 HTML 模板，降低样式漂移
 - 使用 `puppeteer-core + @sparticuz/chromium` 生成 PDF，适配 Vercel 部署
-- 支持导入 / 导出 `.magicyan` 简历数据文件
+- 导出 `.jianli` 简历源文件；导入兼容 `.jianli`、`.json` 和旧版 `.magicyan`
 - Logto 登录 / 退出，正式用户和游客分流
 - 正式用户云端简历管理、自动保存、版本冲突保护和只读在线预览
 - 发布 / 更新 / 关闭简历分享，分享开启后内容与云端保存版本同步
@@ -159,12 +159,18 @@ PDF 渲染器关闭页面脚本和外部网络请求，防止简历中的外链�
 
 ## 数据格式
 
-简历数据使用 `.magicyan` 文件保存，本质是 JSON。
+简历源文件默认导出为 `.jianli`，**内部仍然是明文 JSON，不加密、不压缩**。导入同时支持以下后缀：
+
+- `.jianli`：当前项目默认导出和备份格式
+- `.json`：内容符合本项目简历源文件结构的标准 JSON 文本；任意 JSON 不保证能导入
+- `.magicyan`：原项目历史格式，继续支持导入旧备份
+
+导入会校验顶层 `version` 和 `data`，以及 `data.personalInfo`、`data.modules` 的基本结构，不能仅凭改后缀把任意文件变成简历。历史导出文件的 JSON 结构保持兼容；浏览器中的历史草稿存储键暂不修改，以免现有草稿丢失。
 
 示例结构：
 
 ```ts
-interface MagicyanFile {
+interface ResumeSourceFile {
   version: string
   data: ResumeData
   metadata: {
@@ -212,7 +218,7 @@ pages/
   api/export/pdf.ts
 
 public/
-  demo.magicyan
+  demo.jianli
 
 types/
   resume.ts
@@ -221,3 +227,5 @@ types/
 ## 开源协议
 
 本项目基于 `GNU Affero General Public License v3.0` 开源，详见 [LICENSE](./LICENSE)。
+
+修改说明（2026-11-06）：在本分支中将简历源文件默认后缀调整为 `.jianli`，新增 `.json` 导入支持，并保留原 `.magicyan` 导入兼容性；许可证与原项目版权信息保持不变。
