@@ -98,6 +98,7 @@ export default function ResumeBuilder({ user }: { user: AccountUser | null }) {
   });
   const [viewMode, setViewMode] = useState<ViewMode>("both");
   const [compactMode, setCompactMode] = useState<"edit" | "preview">("edit");
+  const [activePreviewSection, setActivePreviewSection] = useState<string | null>(null);
   const isCompact = useCompactLayout();
   const [isHydrated, setIsHydrated] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
@@ -627,9 +628,17 @@ export default function ResumeBuilder({ user }: { user: AccountUser | null }) {
         {(isCompact || viewMode === "both" || viewMode === "edit-only") && (
           <div
             className={`editor-panel ${viewMode === "edit-only" ? "w-full" : ""} ${isCompact && compactMode !== "edit" ? "hidden" : ""}`}
+            onFocusCapture={(event) => {
+              const section = (event.target as HTMLElement).closest<HTMLElement>("[data-edit-section]")?.dataset.editSection;
+              if (section) setActivePreviewSection((current) => current === section ? current : section);
+            }}
+            onClickCapture={(event) => {
+              const section = (event.target as HTMLElement).closest<HTMLElement>("[data-edit-section]")?.dataset.editSection;
+              if (section) setActivePreviewSection((current) => current === section ? current : section);
+            }}
           >
             <div className="space-y-6 p-3 sm:p-6">
-              <Card className="p-4">
+              <Card className="p-4" data-edit-section="header">
                 <div className="space-y-4">
                   <div className="flex items-center gap-2">
                     <Icon
@@ -650,14 +659,16 @@ export default function ResumeBuilder({ user }: { user: AccountUser | null }) {
                 </div>
               </Card>
 
-              <PersonalInfoEditor
-                personalInfo={editorState.resumeData.personalInfo}
-                avatar={editorState.resumeData.avatar}
-                avatarShape={editorState.resumeData.avatarShape}
-                onUpdate={(personalInfo, avatar, avatarShape) =>
-                  updateResumeData({ personalInfo, avatar, avatarShape })
-                }
-              />
+              <div data-edit-section="header">
+                <PersonalInfoEditor
+                  personalInfo={editorState.resumeData.personalInfo}
+                  avatar={editorState.resumeData.avatar}
+                  avatarShape={editorState.resumeData.avatarShape}
+                  onUpdate={(personalInfo, avatar, avatarShape) =>
+                    updateResumeData({ personalInfo, avatar, avatarShape })
+                  }
+                />
+              </div>
 
               <ModuleEditor
                 modules={editorState.resumeData.modules}
@@ -672,9 +683,9 @@ export default function ResumeBuilder({ user }: { user: AccountUser | null }) {
             className={`preview-panel ${viewMode === "preview-only" ? "w-full" : ""}`}
           >
             {isCompact ? (
-              <ResponsiveResumePreview resumeData={editorState.resumeData} />
+              <ResponsiveResumePreview resumeData={editorState.resumeData} activeSection={activePreviewSection} />
             ) : (
-              <HtmlResumePreview resumeData={editorState.resumeData} embedded />
+              <HtmlResumePreview resumeData={editorState.resumeData} embedded activeSection={activePreviewSection} />
             )}
           </div>
         )}
