@@ -160,9 +160,24 @@ interface PersonalInfoItemEditorProps { item: PersonalInfoItem; onUpdate: (updat
 
 function PersonalInfoItemEditor({ item, onUpdate, onRemove }: PersonalInfoItemEditorProps) {
   const iconBody = sanitizeSvgBody(item.icon)
-  return <div className="flex items-start gap-3 rounded-lg border bg-muted/30 p-3">
-    <Dialog><DialogTrigger asChild><Button variant="outline" size="sm" className="icon-button bg-transparent">{iconBody && <svg width={24} height={24} viewBox="0 0 24 24" dangerouslySetInnerHTML={{ __html: iconBody }} />}</Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>选择图标</DialogTitle></DialogHeader><IconPicker selectedIcon={item.icon} onSelect={(icon) => onUpdate({ icon })} /></DialogContent></Dialog>
-    <div className="grid min-w-0 flex-1 grid-cols-1 gap-3 sm:grid-cols-2"><div><Label className="text-xs text-muted-foreground">标签</Label><Input value={item.label} onChange={(event) => onUpdate({ label: event.target.value })} placeholder="如：电话、邮箱" className="h-8" /></div><div><Label className="text-xs text-muted-foreground">内容</Label><Input value={item.value} onChange={(event) => onUpdate({ value: event.target.value })} placeholder="请输入对应内容" className="h-8" /></div></div>
-    <Button variant="ghost" size="sm" onClick={onRemove} className="icon-button text-destructive hover:text-destructive" aria-label="删除信息"><Icon icon="mdi:delete" className="h-4 w-4" /></Button>
+  return <div className="flex items-center gap-3 rounded-lg border bg-muted/30 p-3">
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button type="button" variant="outline" size="icon" className="size-10 shrink-0 self-center bg-transparent" aria-label={`选择${item.label || "个人信息"}图标`}>
+          {iconBody
+            ? <svg width={20} height={20} viewBox="0 0 24 24" dangerouslySetInnerHTML={{ __html: iconBody }} />
+            : <Icon icon="mdi:image-plus-outline" className="size-4 text-muted-foreground" />}
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader><DialogTitle>选择图标</DialogTitle></DialogHeader>
+        <IconPicker selectedIcon={item.icon} onSelect={(icon) => onUpdate({ icon })} />
+      </DialogContent>
+    </Dialog>
+    <div className="grid min-w-0 flex-1 grid-cols-1 gap-3 sm:grid-cols-2">
+      <div className="min-w-0"><Label className="text-xs text-muted-foreground">标签</Label><Input value={item.label} onChange={(event) => onUpdate({ label: event.target.value })} placeholder="如：电话、邮箱" className="h-8" /></div>
+      <div className="min-w-0"><Label className="text-xs text-muted-foreground">内容</Label><Input value={item.value} onChange={(event) => onUpdate({ value: event.target.value })} placeholder="请输入对应内容" className="h-8" /></div>
+    </div>
+    <Button type="button" variant="ghost" size="icon" onClick={onRemove} className="size-10 shrink-0 self-center text-destructive hover:text-destructive" aria-label="删除信息"><Icon icon="mdi:delete" className="size-4" /></Button>
   </div>
 }
