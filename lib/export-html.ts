@@ -20,7 +20,7 @@ export function buildResumeHtml(resumeData: ResumeData, { embedded = false }: { 
         : ""
 
       return `
-        <div class="personal-info-item">
+        <div class="personal-info-item ${iconBody ? "personal-info-item--with-icon" : "personal-info-item--no-icon"}">
           ${iconHtml}
           <span class="personal-info-label">${escapeHtml(item.label)}:</span>
           <span class="personal-info-value">${escapeHtml(
@@ -151,11 +151,16 @@ export function buildResumeHtml(resumeData: ResumeData, { embedded = false }: { 
 
           .personal-info-item {
             display: grid;
-            grid-template-columns: 16px auto minmax(0, 1fr);
+            grid-template-columns: max-content minmax(0, 1fr);
             align-items: start;
-            column-gap: 12px;
+            column-gap: 6px;
             min-width: 0;
             font-size: 14px;
+          }
+
+          .personal-info-item--with-icon {
+            grid-template-columns: 16px max-content minmax(0, 1fr);
+            column-gap: 8px;
           }
 
           .personal-info-label {
