@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Minus, Plus } from "lucide-react";
-import HtmlResumePreview from "@/components/html-resume-preview";
+import HtmlResumePreview, { type PreviewNavigation } from "@/components/html-resume-preview";
 import type { ResumeData } from "@/types/resume";
 
 // CSS resolves physical units at 96px/in. Keep this display-only: PDF HTML
@@ -15,13 +15,15 @@ const MAX_ZOOM = 3;
 interface ResponsiveResumePreviewProps {
   resumeData: ResumeData;
   className?: string;
-  navigation?: { section: string; request: number } | null;
+  navigation?: PreviewNavigation | null;
+  editorGuides?: boolean;
 }
 
 export default function ResponsiveResumePreview({
   resumeData,
   className = "",
   navigation,
+  editorGuides = false,
 }: ResponsiveResumePreviewProps) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
@@ -104,10 +106,11 @@ export default function ResponsiveResumePreview({
               resumeData={resumeData}
               embedded
               navigation={navigation}
-              onSectionPosition={(position) => {
+              editorGuides={editorGuides}
+              onSectionPosition={(position, alignRatio = 0.12) => {
                 const viewportElement = viewportRef.current;
                 if (!viewportElement) return;
-                const target = Math.max(0, position * scale - viewportElement.clientHeight * 0.12);
+                const target = Math.max(0, position * scale - viewportElement.clientHeight * alignRatio);
                 viewportElement.scrollTo({ top: target, behavior: "smooth" });
               }}
               className="absolute left-0 top-0 block border-0 bg-white"
