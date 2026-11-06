@@ -15,13 +15,13 @@ const MAX_ZOOM = 3;
 interface ResponsiveResumePreviewProps {
   resumeData: ResumeData;
   className?: string;
-  activeSection?: string | null;
+  navigation?: { section: string; request: number } | null;
 }
 
 export default function ResponsiveResumePreview({
   resumeData,
   className = "",
-  activeSection,
+  navigation,
 }: ResponsiveResumePreviewProps) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
@@ -103,7 +103,7 @@ export default function ResponsiveResumePreview({
             <HtmlResumePreview
               resumeData={resumeData}
               embedded
-              activeSection={activeSection}
+              navigation={navigation}
               onSectionPosition={(position) => {
                 const viewportElement = viewportRef.current;
                 if (!viewportElement) return;
