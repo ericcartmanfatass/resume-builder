@@ -9,11 +9,13 @@ import type { ResumeData } from "@/types/resume"
 import { Button } from "@/components/ui/button"
 import { useAccount } from "@/components/account-provider"
 import { ClientApiError } from "@/lib/api-client"
+import { cn } from "@/lib/utils"
 
 interface PDFExportButtonProps {
   resumeData: ResumeData
   variant?: "default" | "outline"
   size?: "default" | "sm"
+  className?: string
   shareToken?: string
 }
 
@@ -21,6 +23,7 @@ export function PDFExportButton({
   resumeData,
   variant = "default",
   size = "default",
+  className,
   shareToken,
 }: PDFExportButtonProps) {
   const [isExporting, setIsExporting] = useState(false)
@@ -80,7 +83,7 @@ export function PDFExportButton({
   }
 
   return (
-    <Button variant={variant} size={size} onClick={handleExport} disabled={isExporting || loading} className="gap-2">
+    <Button variant={variant} size={size} onClick={handleExport} disabled={isExporting || loading} className={cn("gap-2", className)}>
       <Icon
         icon={isExporting ? "mdi:loading" : "mdi:file-pdf-box"}
         className={`h-4 w-4 ${isExporting ? "animate-spin" : ""}`}

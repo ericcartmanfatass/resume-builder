@@ -1,5 +1,5 @@
 import type {
-  MagicyanFile,
+  ResumeSourceFile,
   PersonalInfoItem,
   ResumeData,
   ResumeModule,
@@ -95,8 +95,8 @@ export function createBlankResumeData(): ResumeData {
   }
 }
 
-export function exportToMagicyanFile(resumeData: ResumeData): string {
-  const payload: MagicyanFile = {
+export function exportResumeSourceFile(resumeData: ResumeData): string {
+  const payload: ResumeSourceFile = {
     version: "1.1.0",
     data: {
       ...resumeData,
@@ -115,13 +115,13 @@ export function exportToMagicyanFile(resumeData: ResumeData): string {
   return JSON.stringify(payload, null, 2)
 }
 
-export function importFromMagicyanFile(fileContent: string): ResumeData {
+export function importResumeSourceFile(fileContent: string): ResumeData {
   try {
     if (!fileContent.trim()) {
       throw new Error("文件内容为空")
     }
 
-    const parsed = JSON.parse(fileContent) as MagicyanFile
+    const parsed = JSON.parse(fileContent) as ResumeSourceFile
 
     if (!parsed || typeof parsed !== "object") {
       throw new Error("无效的文件格式")

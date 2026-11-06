@@ -177,14 +177,14 @@ export default function IconPicker({ selectedIcon, onSelect }: IconPickerProps) 
 
       {/* 图标网格 */}
       <ScrollArea className="h-64">
-        <div className="grid grid-cols-6 gap-2 p-1">
+        <div className="grid grid-cols-4 gap-2 p-1 sm:grid-cols-6">
           {/* 空选项 */}
           <Button
             key="empty-icon"
             variant={selectedIcon === "" ? "default" : "outline"}
             size="sm"
             onClick={() => onSelect("")}
-            className="h-12 w-12 p-0 flex flex-col items-center justify-center gap-1"
+            className="h-12 w-full min-w-0 p-0 flex flex-col items-center justify-center gap-1"
             title="不使用图标"
           >
             <div className="w-5 h-5 border border-dashed border-gray-400 rounded-sm flex items-center justify-center">
@@ -209,7 +209,7 @@ export default function IconPicker({ selectedIcon, onSelect }: IconPickerProps) 
                   onSelect(svgPath || "");
                 });
               }}
-              className="h-12 w-12 p-0 flex flex-col items-center justify-center gap-1"
+              className="h-12 w-full min-w-0 p-0 flex flex-col items-center justify-center gap-1"
               title={label}
             >
               <Icon icon={icon} className="w-5 h-5" />

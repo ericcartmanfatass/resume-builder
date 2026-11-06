@@ -338,3 +338,141 @@
     text-decoration: underline !important;
   }
 }
+
+/*
+ * Mobile editor shell only. The document stylesheet in lib/export-html.ts
+ * stays untouched, so PDF output and desktop A4 layout are unchanged.
+ */
+.mobile-toolbar-actions {
+  display: none;
+}
+
+@media (max-width: 1023px) {
+  /*
+   * Only the editor panel should scroll on compact screens. If the document
+   * itself remains scrollable, Android's focus/keyboard auto-scroll can move
+   * the whole 100dvh app above the visual viewport, leaving a persistent
+   * blank area after the keyboard closes.
+   */
+  html,
+  body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  body > main {
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .resume-editor {
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .editor-toolbar {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    padding: 10px 12px;
+    flex-shrink: 0;
+  }
+
+  .toolbar-title {
+    min-width: 0;
+    max-width: 100%;
+    align-self: center;
+  }
+
+  .desktop-toolbar-actions {
+    display: none;
+  }
+
+  .mobile-toolbar-actions {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .mobile-toolbar-actions > .grid > button {
+    width: 100%;
+  }
+
+  .editor-content {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .editor-panel,
+  .preview-panel {
+    flex: 1 1 auto;
+    min-height: 0;
+    min-width: 0;
+    width: 100%;
+    border: 0;
+  }
+
+  .editor-panel {
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .preview-panel {
+    overflow: hidden;
+  }
+
+  .section-header {
+    gap: 8px;
+  }
+
+  .section-header > :first-child {
+    min-width: 0;
+  }
+}
+
+@media (min-width: 1024px) {
+  /*
+   * Keep the desktop workspace within one viewport. A min-height-only shell
+   * grows to fit the editor's long content, so the document scrolls instead
+   * of .editor-panel; the preview iframe becomes equally tall and has no
+   * independent scroll range for section-follow navigation.
+   */
+  .resume-editor {
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .editor-toolbar {
+    flex-shrink: 0;
+  }
+
+  .editor-content {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .editor-panel,
+  .preview-panel {
+    min-height: 0;
+  }
+
+  .editor-panel {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .mobile-toolbar-actions {
+    display: none;
+  }
+}

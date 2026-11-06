@@ -1,0 +1,134 @@
+{
+  "version": "1.1.0",
+  "data": {
+    "title": "林知远｜前端开发工程师（示例）",
+    "personalInfo": [
+      {
+        "id": "name",
+        "label": "姓名",
+        "value": "林知远（示例）",
+        "icon": ""
+      },
+      {
+        "id": "phone",
+        "label": "电话",
+        "value": "138 0000 0000",
+        "icon": ""
+      },
+      {
+        "id": "email",
+        "label": "邮箱",
+        "value": "lin.zhiyuan@example.com",
+        "icon": ""
+      },
+      {
+        "id": "location",
+        "label": "城市",
+        "value": "上海",
+        "icon": ""
+      },
+      {
+        "id": "target",
+        "label": "求职方向",
+        "value": "前端开发 / Web 应用",
+        "icon": ""
+      },
+      {
+        "id": "github",
+        "label": "GitHub",
+        "value": "https://github.com/your-name",
+        "icon": ""
+      }
+    ],
+    "avatar": "data:image/jpeg;base64,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",
+    "avatarShape": "circle",
+    "modules": [
+      {
+        "id": "summary-1",
+        "title": "职业概况",
+        "subtitle": "",
+        "timeRange": "",
+        "content": "5 年 Web 前端开发经验，主要参与企业级管理平台与移动端产品建设，熟悉 **React、TypeScript、Next.js** 技术栈。能够独立完成需求拆解、组件设计、接口联调、性能优化和上线维护；重视可维护性、用户体验及可验证的业务成果。",
+        "contentMode": "markdown",
+        "icon": "<path fill=\"currentColor\" d=\"M12 2a10 10 0 1 0 0 20a10 10 0 0 0 0-20m0 2a8 8 0 1 1 0 16a8 8 0 0 1 0-16\"/>",
+        "order": 0
+      },
+      {
+        "id": "skills-1",
+        "title": "核心技能",
+        "subtitle": "",
+        "timeRange": "",
+        "content": "- **前端开发：** 熟悉 HTML5、CSS3、JavaScript、TypeScript，能够使用 React、Next.js 开发响应式页面与复杂业务表单。\n- **工程化与质量：** 使用 Vite、Webpack、Git、CI/CD；了解单元测试、代码评审、组件抽象和设计规范落地。\n- **性能与稳定性：** 熟悉 Lighthouse、Web Vitals、懒加载、代码拆分、缓存策略及异常监控，能够定位常见性能问题。\n- **协作与交付：** 具备与产品、设计、后端和测试协作的经验，能够推进需求评审、灰度发布与线上问题复盘。",
+        "contentMode": "markdown",
+        "icon": "<path fill=\"currentColor\" d=\"M4 5h16v2H4zM4 11h16v2H4zM4 17h16v2H4z\"/>",
+        "order": 1
+      },
+      {
+        "id": "work-1",
+        "title": "工作经历",
+        "subtitle": "星辰数科（虚构企业）｜高级前端开发工程师",
+        "timeRange": "2023.06 – 至今",
+        "content": "- 负责企业 SaaS 运营平台的核心模块开发，与产品、设计和后端组成 **6 人协作团队**，推进需求分析、开发、联调与发布。\n- 牵头统一表单、表格与权限组件，沉淀 **28 个可复用组件**，支持 3 条业务线共享，示例场景下新页面交付时间缩短约 **25%**。\n- 通过路由级代码拆分、资源缓存及渲染优化，将核心页面 LCP 从 **3.4 秒降至 2.0 秒**，改善低端设备加载体验。\n- 建立前端错误监控与关键操作日志，配合测试梳理高频故障，减少重复出现的线上问题。",
+        "contentMode": "markdown",
+        "icon": "<path fill=\"currentColor\" d=\"M10 2h4a2 2 0 0 1 2 2v2h4a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8c0-1.11.89-2 2-2h4V4c0-1.11.89-2 2-2m4 4V4h-4v2z\"/>",
+        "order": 2
+      },
+      {
+        "id": "work-2",
+        "title": "",
+        "subtitle": "云杉互联（虚构企业）｜前端开发工程师",
+        "timeRange": "2021.07 – 2023.05",
+        "content": "- 参与订单管理、客户服务与移动端活动页建设，使用 React + TypeScript 完成业务组件及 API 集成。\n- 优化多步骤表单的校验、错误反馈和草稿恢复流程，减少用户因中断操作造成的重复填写。\n- 配合团队完善代码评审、发布检查清单与回归验证，提高跨版本迭代的稳定性。",
+        "contentMode": "markdown",
+        "icon": "",
+        "order": 3
+      },
+      {
+        "id": "project-1",
+        "title": "代表项目",
+        "subtitle": "企业运营工作台｜前端负责人",
+        "timeRange": "2024.02 – 2025.10",
+        "content": "**项目背景：** 多条业务线长期使用分散后台，存在权限规则不统一、重复开发和页面性能不稳定等问题。\n\n- **我的职责：** 设计通用页面骨架、权限路由与可配置表单，组织组件 API 约定及跨团队联调。\n- **技术方案：** 使用 React、TypeScript、React Query 和组件化设计，统一加载状态、错误反馈与数据缓存策略。\n- **项目结果：** 支持 **3 条业务线** 接入，常见管理页面的重复开发工作减少；关键页面 LCP 从 **3.4 秒降低至 2.0 秒**。",
+        "contentMode": "markdown",
+        "icon": "<path fill=\"currentColor\" d=\"M22 4h-8l-2-2H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2M2 6H0v14a2 2 0 0 0 2 2h18v-2H2z\"/>",
+        "order": 4
+      },
+      {
+        "id": "project-2",
+        "title": "",
+        "subtitle": "移动端服务预约平台｜核心开发",
+        "timeRange": "2022.04 – 2023.04",
+        "content": "**项目背景：** 面向移动端用户提供服务检索、预约、订单查询及通知入口，重点解决复杂表单和弱网体验问题。\n\n- **我的职责：** 负责预约流程、表单校验与状态反馈，推动设计稿适配不同尺寸设备。\n- **技术方案：** 使用 React + TypeScript 实现分步填写、输入暂存、请求重试和统一错误提示。\n- **项目结果：** 优化关键操作路径，减少异常中断后的重复操作，并沉淀可复用移动端表单组件。",
+        "contentMode": "markdown",
+        "icon": "",
+        "order": 5
+      },
+      {
+        "id": "education-1",
+        "title": "教育背景",
+        "subtitle": "海城大学（虚构院校）｜计算机科学与技术 · 本科",
+        "timeRange": "2017.09 – 2021.06",
+        "content": "- 主要课程：数据结构、数据库原理、计算机网络、软件工程、Web 应用开发。\n- 毕业设计：团队任务协作系统，负责界面开发、角色权限设计与前后端接口联调。",
+        "contentMode": "markdown",
+        "icon": "<path fill=\"currentColor\" d=\"M12 3L1 9l11 6l9-4.91V17h2V9M5 13.18v4L12 21l7-3.82v-4L12 17z\"/>",
+        "order": 6
+      },
+      {
+        "id": "additional-1",
+        "title": "补充信息",
+        "subtitle": "",
+        "timeRange": "",
+        "content": "- **语言能力：** 能阅读英文技术文档，使用英语进行基础技术沟通。\n- **技术积累：** 关注 Web 可访问性、响应式布局及前端工程实践，定期整理组件示例和问题复盘。\n- **求职方向：** 前端开发工程师 / Web 应用开发，偏好重视工程质量与产品体验的团队。",
+        "contentMode": "markdown",
+        "icon": "<path fill=\"currentColor\" d=\"M12 2l3 6l7 1l-5 5l1 7l-6-3l-6 3l1-7l-5-5l7-1z\"/>",
+        "order": 7
+      }
+    ],
+    "createdAt": "2026-11-06T00:00:00.000Z",
+    "updatedAt": "2026-11-06T00:00:00.000Z"
+  },
+  "metadata": {
+    "exportedAt": "2026-11-06T00:00:00.000Z",
+    "appVersion": "1.1.0"
+  }
+}

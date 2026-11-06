@@ -28,6 +28,7 @@ function findLocalChromePath() {
     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
     "/usr/bin/google-chrome",
     "/usr/bin/chromium-browser",
+    "/usr/bin/chromium",
   ]
 
   return candidates.find((candidate) => fs.existsSync(candidate))

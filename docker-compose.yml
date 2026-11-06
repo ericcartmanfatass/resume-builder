@@ -1,0 +1,29 @@
+services:
+  resume-builder:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: resume-builder
+    restart: unless-stopped
+    env_file:
+      - .env.local
+    ports:
+      # Only the VPS itself can access this port; 1Panel can proxy
+      # to http://resume-builder:3000 on the shared Docker network.
+      - "127.0.0.1:3000:3000"
+    networks:
+      - 1panel-network
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/api/session').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+networks:
+  1panel-network:
+    external: true

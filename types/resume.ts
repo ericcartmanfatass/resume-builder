@@ -28,7 +28,7 @@ export interface ResumeData {
   updatedAt: string
 }
 
-export interface MagicyanFile {
+export interface ResumeSourceFile {
   version: string
   data: ResumeData
   metadata: {
@@ -36,6 +36,9 @@ export interface MagicyanFile {
     appVersion: string
   }
 }
+
+/** @deprecated Use ResumeSourceFile; kept for code importing the old type. */
+export type MagicyanFile = ResumeSourceFile
 
 export interface EditorState {
   resumeData: ResumeData

@@ -1,9 +1,11 @@
 "use client";
 
 import type React from "react";
-import { memo, useCallback, useEffect, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { Icon } from "@iconify/react";
-import HtmlResumePreview from "@/components/html-resume-preview";
+import HtmlResumePreview, { type PreviewNavigation } from "@/components/html-resume-preview";
+import ResponsiveResumePreview from "@/components/responsive-resume-preview";
+import { useCompactLayout } from "@/hooks/use-compact-layout";
 import ModuleEditor from "@/components/module-editor";
 import PDFExportButton from "@/components/pdf-export-button";
 import PersonalInfoEditor from "@/components/personal-info-editor";
@@ -25,8 +27,8 @@ import { useToast } from "@/hooks/use-toast";
 import {
   createBlankResumeData,
   downloadFile,
-  exportToMagicyanFile,
-  importFromMagicyanFile,
+  exportResumeSourceFile,
+  importResumeSourceFile,
 } from "@/lib/resume-utils";
 import type { EditorState, ResumeData } from "@/types/resume";
 import type { AccountUser } from "@/types/account";
@@ -38,6 +40,7 @@ import { useCloudResume } from "@/hooks/use-cloud-resume";
 type ViewMode = "both" | "edit-only" | "preview-only";
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
+// Keep the historical localStorage key so existing browser drafts are not lost.
 const LOCAL_RESUME_KEY = "magicyan-resume-draft";
 
 const ViewModeSelector = memo(function ViewModeSelector({
@@ -94,6 +97,30 @@ export default function ResumeBuilder({ user }: { user: AccountUser | null }) {
     showPreview: true,
   });
   const [viewMode, setViewMode] = useState<ViewMode>("both");
+  const [compactMode, setCompactMode] = useState<"edit" | "preview">("edit");
+  const [previewNavigation, setPreviewNavigation] = useState<PreviewNavigation | null>(null);
+  const activePreviewSectionRef = useRef<string | null>(null);
+  const scrollFrameRef = useRef<number | null>(null);
+  const requestPreviewSection = useCallback((
+    section: string,
+    target?: string,
+    alignRatio = 0.22,
+    repeat = false,
+  ) => {
+    const key = section + "|" + (target ?? "");
+    if (!repeat && activePreviewSectionRef.current === key) return;
+    activePreviewSectionRef.current = key;
+    setPreviewNavigation((previous) => ({
+      section,
+      target,
+      alignRatio,
+      request: (previous?.request ?? 0) + 1,
+    }));
+  }, []);
+  useEffect(() => () => {
+    if (scrollFrameRef.current !== null) cancelAnimationFrame(scrollFrameRef.current);
+  }, []);
+  const isCompact = useCompactLayout();
   const [isHydrated, setIsHydrated] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [hasGuestDraft, setHasGuestDraft] = useState(false);
@@ -110,13 +137,13 @@ export default function ResumeBuilder({ user }: { user: AccountUser | null }) {
   );
 
   const loadDemoData = useCallback(async () => {
-    const response = await fetch("/demo.magicyan");
+    const response = await fetch("/demo.jianli");
     if (!response.ok) {
       throw new Error("Failed to load demo data");
     }
 
     const content = await response.text();
-    return importFromMagicyanFile(content);
+    return importResumeSourceFile(content);
   }, []);
 
   useEffect(() => {
@@ -131,7 +158,7 @@ export default function ResumeBuilder({ user }: { user: AccountUser | null }) {
         if (savedDraft) {
           setEditorState((prev) => ({
             ...prev,
-            resumeData: importFromMagicyanFile(savedDraft),
+            resumeData: importResumeSourceFile(savedDraft),
           }));
           setIsHydrated(true);
           return;
@@ -263,8 +290,8 @@ export default function ResumeBuilder({ user }: { user: AccountUser | null }) {
 
   const handleExport = () => {
     try {
-      const fileContent = exportToMagicyanFile(editorState.resumeData);
-      const filename = `${editorState.resumeData.title.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, "_")}.magicyan`;
+      const fileContent = exportResumeSourceFile(editorState.resumeData);
+      const filename = `${editorState.resumeData.title.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, "_")}.jianli`;
       downloadFile(fileContent, filename);
 
       toast({
@@ -287,10 +314,10 @@ export default function ResumeBuilder({ user }: { user: AccountUser | null }) {
       return;
     }
 
-    if (!file.name.endsWith(".magicyan")) {
+    if (!/\.(jianli|json|magicyan)$/i.test(file.name)) {
       toast({
         title: "文件格式错误",
-        description: "请选择 .magicyan 格式文件。",
+        description: "支持 .jianli、.json，以及旧版 .magicyan 简历源文件。",
         variant: "destructive",
       });
       event.target.value = "";
@@ -311,7 +338,7 @@ export default function ResumeBuilder({ user }: { user: AccountUser | null }) {
     reader.onload = async (loadEvent) => {
       try {
         const content = loadEvent.target?.result as string;
-        const importedData = importFromMagicyanFile(content);
+        const importedData = importResumeSourceFile(content);
         await cloud.detach();
 
         setEditorState((prev) => ({
@@ -406,7 +433,7 @@ export default function ResumeBuilder({ user }: { user: AccountUser | null }) {
           )}
         </div>
 
-        <div className="toolbar-actions">
+        <div className="toolbar-actions desktop-toolbar-actions">
           <ViewModeSelector
             viewMode={viewMode}
             onViewModeChange={setViewMode}
@@ -415,7 +442,7 @@ export default function ResumeBuilder({ user }: { user: AccountUser | null }) {
 
           <input
             type="file"
-            accept=".magicyan"
+            accept=".jianli,.json,.magicyan"
             onChange={handleImport}
             className="hidden"
             id="import-file"
@@ -520,6 +547,47 @@ export default function ResumeBuilder({ user }: { user: AccountUser | null }) {
 
           <PDFExportButton resumeData={editorState.resumeData} size="sm" />
         </div>
+        <div className="mobile-toolbar-actions">
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              size="sm"
+              onClick={() => void handleCloudSave()}
+              disabled={cloud.busy || !isHydrated}
+              className="h-11 w-full gap-2 px-3"
+            >
+              <Icon icon={cloud.busy ? "mdi:loading" : "mdi:content-save-outline"} className={`h-4 w-4 ${cloud.busy ? "animate-spin" : ""}`} />
+              {cloud.busy ? "同步中…" : cloud.active ? "云端同步" : "保存"}
+            </Button>
+            <PDFExportButton resumeData={editorState.resumeData} size="sm" className="h-11 w-full gap-2 px-3" />
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="grid min-w-0 flex-1 grid-cols-2 rounded-lg bg-muted p-1" role="tablist" aria-label="编辑与预览">
+              <button type="button" role="tab" aria-selected={compactMode === "edit"} onClick={() => setCompactMode("edit")}
+                className={`min-h-10 rounded-md px-3 text-sm font-medium ${compactMode === "edit" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}>编辑</button>
+              <button type="button" role="tab" aria-selected={compactMode === "preview"} onClick={() => setCompactMode("preview")}
+                className={`min-h-10 rounded-md px-3 text-sm font-medium ${compactMode === "preview" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}>预览</button>
+            </div>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="min-h-10 shrink-0 gap-1 bg-transparent" aria-label="更多简历操作">
+                  <Icon icon="mdi:dots-horizontal" className="h-4 w-4" />更多
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-h-[85dvh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>更多操作</DialogTitle>
+                  <DialogDescription>新建、载入、导入或导出简历源文件。</DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-2">
+                  <DialogClose asChild><Button variant="outline" className="min-h-11 justify-start" onClick={() => void handleCreateBlankResume()}>新建空白简历</Button></DialogClose>
+                  <DialogClose asChild><Button variant="outline" className="min-h-11 justify-start" onClick={() => void handleLoadDemo()}>加载示例</Button></DialogClose>
+                  <DialogClose asChild><Button variant="outline" className="min-h-11 justify-start" onClick={() => document.getElementById("import-file")?.click()}>导入源文件</Button></DialogClose>
+                  <DialogClose asChild><Button variant="outline" className="min-h-11 justify-start" onClick={handleExport}>导出 .jianli 源文件</Button></DialogClose>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </div>
         <AccountMenu>
           <CloudResumeControls cloud={cloud} ready={isHydrated} />
           {hasGuestDraft && user && (
@@ -540,7 +608,7 @@ export default function ResumeBuilder({ user }: { user: AccountUser | null }) {
                     try {
                       const raw = localStorage.getItem(LOCAL_RESUME_KEY);
                       if (!raw) return;
-                      const imported = importFromMagicyanFile(raw);
+                      const imported = importResumeSourceFile(raw);
                       await cloud.detach();
                       loadCloudData(imported);
                       localStorage.setItem(`${localKey}:guest-dismissed`, "1");
@@ -578,12 +646,44 @@ export default function ResumeBuilder({ user }: { user: AccountUser | null }) {
       </header>
 
       <div className="editor-content">
-        {(viewMode === "both" || viewMode === "edit-only") && (
+        {(isCompact || viewMode === "both" || viewMode === "edit-only") && (
           <div
-            className={`editor-panel ${viewMode === "edit-only" ? "w-full" : ""}`}
+            className={`editor-panel ${viewMode === "edit-only" ? "w-full" : ""} ${isCompact && compactMode !== "edit" ? "hidden" : ""}`}
+            onFocusCapture={(event) => {
+              const element = event.target as HTMLElement;
+              const section = element.closest<HTMLElement>("[data-edit-section]")?.dataset.editSection;
+              if (!section) return;
+              const target = element.closest<HTMLElement>("[data-edit-field]")?.dataset.editField;
+              const bounds = event.currentTarget.getBoundingClientRect();
+              const ratio = Math.max(0.08, Math.min(0.88, (element.getBoundingClientRect().top - bounds.top + 16) / Math.max(bounds.height, 1)));
+              requestPreviewSection(section, target, ratio);
+            }}
+            onClickCapture={(event) => {
+              const element = event.target as HTMLElement;
+              const section = element.closest<HTMLElement>("[data-edit-section]")?.dataset.editSection;
+              if (!section) return;
+              const target = element.closest<HTMLElement>("[data-edit-field]")?.dataset.editField;
+              const bounds = event.currentTarget.getBoundingClientRect();
+              const ratio = Math.max(0.08, Math.min(0.88, (element.getBoundingClientRect().top - bounds.top + 16) / Math.max(bounds.height, 1)));
+              requestPreviewSection(section, target, ratio, true);
+            }}
+            onScroll={(event) => {
+              if (event.target !== event.currentTarget || scrollFrameRef.current !== null) return;
+              const panel = event.currentTarget;
+              scrollFrameRef.current = requestAnimationFrame(() => {
+                scrollFrameRef.current = null;
+                const anchor = panel.getBoundingClientRect().top + Math.min(120, panel.clientHeight * 0.25);
+                const sections = Array.from(panel.querySelectorAll<HTMLElement>("[data-edit-section]"));
+                const active = sections.find((section) => {
+                  const rect = section.getBoundingClientRect();
+                  return rect.top <= anchor && rect.bottom > anchor;
+                }) ?? sections.find((section) => section.getBoundingClientRect().top > anchor);
+                if (active?.dataset.editSection && !activePreviewSectionRef.current?.startsWith(active.dataset.editSection + "|")) requestPreviewSection(active.dataset.editSection);
+              });
+            }}
           >
-            <div className="space-y-6 p-6">
-              <Card className="p-4">
+            <div className="space-y-6 p-3 sm:p-6">
+              <Card className="p-4" data-edit-section="header">
                 <div className="space-y-4">
                   <div className="flex items-center gap-2">
                     <Icon
@@ -593,6 +693,7 @@ export default function ResumeBuilder({ user }: { user: AccountUser | null }) {
                     <h2 className="font-medium">简历标题</h2>
                   </div>
                   <Input
+                    data-edit-field="title"
                     value={editorState.resumeData.title}
                     onChange={(event) =>
                       updateResumeData({ title: event.target.value })
@@ -604,14 +705,16 @@ export default function ResumeBuilder({ user }: { user: AccountUser | null }) {
                 </div>
               </Card>
 
-              <PersonalInfoEditor
-                personalInfo={editorState.resumeData.personalInfo}
-                avatar={editorState.resumeData.avatar}
-                avatarShape={editorState.resumeData.avatarShape}
-                onUpdate={(personalInfo, avatar, avatarShape) =>
-                  updateResumeData({ personalInfo, avatar, avatarShape })
-                }
-              />
+              <div data-edit-section="header">
+                <PersonalInfoEditor
+                  personalInfo={editorState.resumeData.personalInfo}
+                  avatar={editorState.resumeData.avatar}
+                  avatarShape={editorState.resumeData.avatarShape}
+                  onUpdate={(personalInfo, avatar, avatarShape) =>
+                    updateResumeData({ personalInfo, avatar, avatarShape })
+                  }
+                />
+              </div>
 
               <ModuleEditor
                 modules={editorState.resumeData.modules}
@@ -621,11 +724,15 @@ export default function ResumeBuilder({ user }: { user: AccountUser | null }) {
           </div>
         )}
 
-        {(viewMode === "both" || viewMode === "preview-only") && (
+        {(isCompact ? compactMode === "preview" : viewMode === "both" || viewMode === "preview-only") && (
           <div
             className={`preview-panel ${viewMode === "preview-only" ? "w-full" : ""}`}
           >
-            <HtmlResumePreview resumeData={editorState.resumeData} embedded />
+            {isCompact ? (
+              <ResponsiveResumePreview resumeData={editorState.resumeData} navigation={previewNavigation} editorGuides />
+            ) : (
+              <HtmlResumePreview resumeData={editorState.resumeData} embedded navigation={previewNavigation} editorGuides />
+            )}
           </div>
         )}
       </div>

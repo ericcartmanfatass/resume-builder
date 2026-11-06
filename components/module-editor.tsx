@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import dynamic from "next/dynamic"
-import { DragDropContext, Draggable, Droppable, type DropResult } from "@hello-pangea/dnd"
+import { DragDropContext, Draggable, Droppable, type DropResult, type DraggableProvided } from "@hello-pangea/dnd"
 import { Icon } from "@iconify/react"
 import IconPicker from "@/components/icon-picker"
 import RichTextEditor from "@/components/rich-text-editor"
@@ -32,6 +32,9 @@ export default function ModuleEditor({ modules, onUpdate }: ModuleEditorProps) {
     onUpdate([...modules, newModule])
     setExpandedModules((prev) => new Set([...prev, newModule.id]))
   }
+
+  // All modules are controlled by this set; collapsing them is a UI-only change.
+  const collapseAllModules = () => setExpandedModules(new Set<string>())
 
   const updateModule = (id: string, updates: Partial<ResumeModule>) => {
     onUpdate(modules.map((module) => (module.id === id ? { ...module, ...updates } : module)))
@@ -71,15 +74,29 @@ export default function ModuleEditor({ modules, onUpdate }: ModuleEditorProps) {
 
   return (
     <Card className="section-card">
-      <div className="section-header">
+      <div className="section-header flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <Icon icon="mdi:view-module" className="h-5 w-5 text-primary" />
           <h2 className="section-title">简历模块</h2>
         </div>
-        <Button size="sm" variant="outline" onClick={addModule} className="gap-2 bg-transparent">
-          <Icon icon="mdi:plus" className="h-4 w-4" />
-          添加模块
-        </Button>
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={collapseAllModules}
+            disabled={expandedModules.size === 0}
+            className="gap-1.5 bg-transparent"
+            aria-label="收起全部已展开的简历模块"
+          >
+            <Icon icon="mdi:chevron-double-up" className="h-4 w-4" />
+            全部收起
+          </Button>
+          <Button type="button" size="sm" variant="outline" onClick={addModule} className="gap-2 bg-transparent">
+            <Icon icon="mdi:plus" className="h-4 w-4" />
+            添加模块
+          </Button>
+        </div>
       </div>
 
       <DragDropContext onDragEnd={handleDragEnd}>
@@ -94,13 +111,14 @@ export default function ModuleEditor({ modules, onUpdate }: ModuleEditorProps) {
                       <div
                         ref={draggableProvided.innerRef}
                         {...draggableProvided.draggableProps}
-                        {...draggableProvided.dragHandleProps}
+                        data-edit-section={module.id}
                         style={{
                           ...draggableProvided.draggableProps.style,
                           opacity: snapshot.isDragging ? 0.82 : 1,
                         }}
                       >
                         <ModuleItemEditor
+                          dragHandleProps={draggableProvided.dragHandleProps}
                           module={module}
                           isExpanded={expandedModules.has(module.id)}
                           onToggle={() => toggleModule(module.id)}
@@ -128,6 +146,7 @@ export default function ModuleEditor({ modules, onUpdate }: ModuleEditorProps) {
 }
 
 interface ModuleItemEditorProps {
+  dragHandleProps: DraggableProvided["dragHandleProps"]
   module: ResumeModule
   isExpanded: boolean
   onToggle: () => void
@@ -135,7 +154,7 @@ interface ModuleItemEditorProps {
   onRemove: () => void
 }
 
-function ModuleItemEditor({ module, isExpanded, onToggle, onUpdate, onRemove }: ModuleItemEditorProps) {
+function ModuleItemEditor({ module, isExpanded, onToggle, onUpdate, onRemove, dragHandleProps }: ModuleItemEditorProps) {
   const contentMode: ModuleContentMode = module.contentMode === "rich-text" ? "rich-text" : "markdown"
   const iconBody = sanitizeSvgBody(module.icon)
 
@@ -144,18 +163,20 @@ function ModuleItemEditor({ module, isExpanded, onToggle, onUpdate, onRemove }: 
       <div className="rounded-lg border bg-muted/30">
         <CollapsibleTrigger asChild>
           <div className="flex cursor-pointer items-center justify-between p-3 transition-colors hover:bg-muted/50">
-            <div className="flex items-center gap-3">
-              <Icon icon="mdi:drag" className="h-4 w-4 cursor-grab text-muted-foreground active:cursor-grabbing" />
+            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+              <button type="button" {...dragHandleProps} onClick={(event) => event.stopPropagation()} aria-label="拖动排序模块" className="flex size-9 shrink-0 touch-none items-center justify-center rounded-md text-muted-foreground hover:bg-muted">
+                <Icon icon="mdi:drag" className="h-4 w-4 cursor-grab active:cursor-grabbing" />
+              </button>
               {iconBody ? (
                 <svg width={16} height={16} viewBox="0 0 24 24" dangerouslySetInnerHTML={{ __html: iconBody }} />
               ) : (
                 <div className="h-4 w-4 rounded-sm border border-dashed border-gray-400" />
               )}
-              <span className="font-medium">{module.title || "未命名模块"}</span>
-              <span className="rounded-full bg-background px-2 py-0.5 text-xs text-muted-foreground">
+              <span className="min-w-0 truncate font-medium">{module.title || "未命名模块"}</span>
+              <span className="hidden shrink-0 rounded-full bg-background px-2 py-0.5 text-xs text-muted-foreground sm:inline">
                 {contentMode === "markdown" ? "Markdown" : "富文本"}
               </span>
-              {module.subtitle && <span className="text-sm text-muted-foreground">- {module.subtitle}</span>}
+              {module.subtitle && <span className="hidden min-w-0 truncate text-sm text-muted-foreground md:inline">- {module.subtitle}</span>}
             </div>
             <Icon icon={isExpanded ? "mdi:chevron-up" : "mdi:chevron-down"} className="h-4 w-4 text-muted-foreground" />
           </div>
@@ -169,10 +190,11 @@ function ModuleItemEditor({ module, isExpanded, onToggle, onUpdate, onRemove }: 
               </Button>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="form-group">
                 <Label className="form-label">大标题</Label>
                 <Input
+                  data-edit-field={`module:${module.id}:title`}
                   value={module.title}
                   onChange={(event) => onUpdate({ title: event.target.value })}
                   placeholder="例如：工作经历、项目经历"
@@ -182,7 +204,7 @@ function ModuleItemEditor({ module, isExpanded, onToggle, onUpdate, onRemove }: 
                 <Label className="form-label">图标</Label>
                 <Dialog>
                   <DialogTrigger asChild>
-                    <Button variant="outline" className="w-full justify-start gap-2 bg-transparent">
+                    <Button variant="outline" data-edit-field={`module:${module.id}:title`} className="w-full justify-start gap-2 bg-transparent">
                       {iconBody ? (
                         <svg width={16} height={16} viewBox="0 0 24 24" dangerouslySetInnerHTML={{ __html: iconBody }} />
                       ) : (
@@ -203,10 +225,11 @@ function ModuleItemEditor({ module, isExpanded, onToggle, onUpdate, onRemove }: 
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="form-group">
                 <Label className="form-label">副标题</Label>
                 <Input
+                  data-edit-field={`module:${module.id}:subtitle`}
                   value={module.subtitle || ""}
                   onChange={(event) => onUpdate({ subtitle: event.target.value })}
                   placeholder="例如：公司名称、学校名称"
@@ -215,6 +238,7 @@ function ModuleItemEditor({ module, isExpanded, onToggle, onUpdate, onRemove }: 
               <div className="form-group">
                 <Label className="form-label">时间范围</Label>
                 <Input
+                  data-edit-field={`module:${module.id}:timeRange`}
                   value={module.timeRange || ""}
                   onChange={(event) => onUpdate({ timeRange: event.target.value })}
                   placeholder="例如：2020.01 - 2023.12"
@@ -222,8 +246,8 @@ function ModuleItemEditor({ module, isExpanded, onToggle, onUpdate, onRemove }: 
               </div>
             </div>
 
-            <div className="form-group space-y-3">
-              <div className="flex items-center justify-between gap-3">
+            <div className="form-group space-y-3" data-edit-field={`module:${module.id}:content`}>
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <Label className="form-label">详细内容</Label>
                 <div className="inline-flex rounded-md border bg-background p-1">
                   <Button
@@ -231,7 +255,9 @@ function ModuleItemEditor({ module, isExpanded, onToggle, onUpdate, onRemove }: 
                     variant={contentMode === "markdown" ? "default" : "ghost"}
                     size="sm"
                     className="h-8"
-                    onClick={() => onUpdate({ contentMode: "markdown" })}
+                    onClick={() => {
+                      if (contentMode !== "markdown") onUpdate({ contentMode: "markdown" })
+                    }}
                   >
                     Markdown
                   </Button>
@@ -240,10 +266,13 @@ function ModuleItemEditor({ module, isExpanded, onToggle, onUpdate, onRemove }: 
                     variant={contentMode === "rich-text" ? "default" : "ghost"}
                     size="sm"
                     className="h-8"
-                    onClick={() => onUpdate({
-                      contentMode: "rich-text",
-                      content: renderModuleContent(module),
-                    })}
+                    onClick={() => {
+                      if (contentMode === "rich-text") return
+                      onUpdate({
+                        contentMode: "rich-text",
+                        content: renderModuleContent(module),
+                      })
+                    }}
                   >
                     富文本
                   </Button>
