@@ -441,6 +441,37 @@
 }
 
 @media (min-width: 1024px) {
+  /*
+   * Keep the desktop workspace within one viewport. A min-height-only shell
+   * grows to fit the editor's long content, so the document scrolls instead
+   * of .editor-panel; the preview iframe becomes equally tall and has no
+   * independent scroll range for section-follow navigation.
+   */
+  .resume-editor {
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .editor-toolbar {
+    flex-shrink: 0;
+  }
+
+  .editor-content {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .editor-panel,
+  .preview-panel {
+    min-height: 0;
+  }
+
+  .editor-panel {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
   .mobile-toolbar-actions {
     display: none;
   }
